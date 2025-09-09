@@ -12,7 +12,7 @@ import requests
 from datetime import datetime
 from get_bearer import get_browser_cookies_for_domain
 from utils import Colors, colored_print, timestamp_print, load_config, get_browser_info, obfuscate_key
-from renew_key import request_api_key_with_token
+from renew_key import request_api_key_with_token, copy_to_clipboard
 
 
 
@@ -261,6 +261,13 @@ Examples:
         success, current_api_key = check_current_api_key(token_value, cookies, return_key=True)
         
         if success and current_api_key:
+            # Copy valid API key to clipboard
+            if copy_to_clipboard(current_api_key):
+                print(f"✅ Valid API key copied to clipboard: {obfuscate_key(current_api_key)}", file=sys.stderr)
+            else:
+                print(f"✅ Valid API key found: {obfuscate_key(current_api_key)}", file=sys.stderr)
+                print(f"📋 API Key: {current_api_key}")
+            
             print("", file=sys.stderr)
             timestamp_print("[INFO] Cross-referencing with environment analysis...", Colors.CYAN)
             

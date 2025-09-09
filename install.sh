@@ -6,6 +6,49 @@
 
 set -e  # Exit on any error
 
+# Help function
+show_help() {
+    echo "LiteLLM Key Updater Installation Script"
+    echo ""
+    echo "Usage: $0 [OPTIONS]"
+    echo ""
+    echo "Options:"
+    echo "  --help      Show this help message"
+    echo "  --daemon    Install and start daemon service"
+    echo "  --uninstall Remove daemon service and uninstall"
+    echo ""
+    echo "Examples:"
+    echo "  $0                # Standard installation"
+    echo "  $0 --daemon      # Install with daemon service"
+    echo "  $0 --uninstall   # Remove daemon and uninstall"
+}
+
+# Parse command line arguments
+DAEMON_MODE=false
+UNINSTALL_MODE=false
+
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --help|-h)
+            show_help
+            exit 0
+            ;;
+        --daemon)
+            DAEMON_MODE=true
+            shift
+            ;;
+        --uninstall)
+            UNINSTALL_MODE=true
+            shift
+            ;;
+        *)
+            echo "Unknown option: $1"
+            show_help
+            exit 1
+            ;;
+    esac
+done
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -221,5 +264,144 @@ main() {
     print_info "To use: cd $INSTALL_DIR && source .venv/bin/activate"
 }
 
-# Run main function
+# Daemon management functions
+create_daemon_plist() {
+    local plist_path="$HOME/Library/LaunchAgents/com.litellm.keyupdater.plist"
+    
+    print_info "Creating daemon plist at $plist_path"
+    
+    # Load config to get schedule settings
+    local schedule_hour=9
+    local schedule_minute=30
+    
+    if [[ -f "$INSTALL_DIR/config.json" ]]; then
+        # Extract schedule from config.json if it exists
+        if command -v python3 >/dev/null 2>&1; then
+            schedule_hour=$(python3 -c "import json; print(json.load(open('$INSTALL_DIR/config.json')).get('daemon', {}).get('schedule_hour', 9))" 2>/dev/null || echo "9")
+            schedule_minute=$(python3 -c "import json; print(json.load(open('$INSTALL_DIR/config.json')).get('daemon', {}).get('schedule_minute', 30))" 2>/dev/null || echo "30")
+        fi
+    fi
+    
+    print_info "Scheduling daemon to run daily at ${schedule_hour}:$(printf "%02d" $schedule_minute)"
+    
+    cat > "$plist_path" << EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.litellm.keyupdater</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>$INSTALL_DIR/.venv/bin/python</string>
+        <string>$INSTALL_DIR/check_key.py</string>
+    </array>
+    <key>WorkingDirectory</key>
+    <string>$INSTALL_DIR</string>
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Hour</key>
+        <integer>$schedule_hour</integer>
+        <key>Minute</key>
+        <integer>$schedule_minute</integer>
+    </dict>
+    <key>RunAtLoad</key>
+    <false/>
+    <key>StandardOutPath</key>
+    <string>$HOME/Library/Logs/litellm-keyupdater.log</string>
+    <key>StandardErrorPath</key>
+    <string>$HOME/Library/Logs/litellm-keyupdater-error.log</string>
+</dict>
+</plist>
+EOF
+
+    print_success "Daemon plist created"
+    return 0
+}
+
+start_daemon() {
+    local plist_path="$HOME/Library/LaunchAgents/com.litellm.keyupdater.plist"
+    
+    print_info "Loading daemon with launchctl"
+    
+    if launchctl load "$plist_path"; then
+        print_success "Daemon loaded and started"
+        print_info "Daemon will run daily at ${schedule_hour}:$(printf "%02d" $schedule_minute)"
+        print_info "Logs: $HOME/Library/Logs/litellm-keyupdater.log"
+        return 0
+    else
+        print_error "Failed to load daemon"
+        return 1
+    fi
+}
+
+stop_and_remove_daemon() {
+    local plist_path="$HOME/Library/LaunchAgents/com.litellm.keyupdater.plist"
+    
+    print_info "Stopping and removing daemon"
+    
+    # Unload daemon if running
+    if launchctl list com.litellm.keyupdater >/dev/null 2>&1; then
+        print_info "Unloading daemon"
+        launchctl unload "$plist_path" 2>/dev/null || true
+    fi
+    
+    # Remove plist file
+    if [[ -f "$plist_path" ]]; then
+        print_info "Removing plist file"
+        rm -f "$plist_path"
+        print_success "Daemon removed"
+    else
+        print_info "No daemon plist found"
+    fi
+    
+    return 0
+}
+
+uninstall_application() {
+    print_info "Uninstalling LiteLLM Key Updater"
+    
+    # Stop and remove daemon first
+    stop_and_remove_daemon
+    
+    # Remove application directory
+    if [[ -d "$INSTALL_DIR" ]]; then
+        print_info "Removing installation directory: $INSTALL_DIR"
+        rm -rf "$INSTALL_DIR"
+        print_success "Installation directory removed"
+    else
+        print_info "Installation directory not found"
+    fi
+    
+    # Remove log files
+    local log_files=("$HOME/Library/Logs/litellm-keyupdater.log" "$HOME/Library/Logs/litellm-keyupdater-error.log")
+    for log_file in "${log_files[@]}"; do
+        if [[ -f "$log_file" ]]; then
+            print_info "Removing log file: $log_file"
+            rm -f "$log_file"
+        fi
+    done
+    
+    print_success "Uninstallation completed"
+    return 0
+}
+
+# Run main function with mode selection
+if [[ "$UNINSTALL_MODE" == true ]]; then
+    uninstall_application
+    exit 0
+fi
+
 main "$@"
+
+if [[ "$DAEMON_MODE" == true ]]; then
+    print_info "Setting up daemon service"
+    
+    if create_daemon_plist && start_daemon; then
+        print_success "Daemon service setup completed"
+        print_info "The key updater will now run automatically daily as configured"
+    else
+        print_error "Failed to setup daemon service"
+        exit 1
+    fi
+fi
