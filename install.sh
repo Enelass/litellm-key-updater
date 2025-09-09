@@ -10,7 +10,7 @@ set -e  # Exit on any error
 show_help() {
     echo "LiteLLM Key Updater Installation Script"
     echo ""
-    echo "Usage: $0 [OPTIONS]"
+    echo "Usage: ./install.sh [OPTIONS]"
     echo ""
     echo "Options:"
     echo "  --help      Show this help message"
@@ -18,9 +18,9 @@ show_help() {
     echo "  --uninstall Remove daemon service and uninstall"
     echo ""
     echo "Examples:"
-    echo "  $0                # Standard installation"
-    echo "  $0 --daemon      # Install with daemon service"
-    echo "  $0 --uninstall   # Remove daemon and uninstall"
+    echo "  ./install.sh                # Standard installation"
+    echo "  ./install.sh --daemon      # Install with daemon service"
+    echo "  ./install.sh --uninstall   # Remove daemon and uninstall"
 }
 
 # Parse command line arguments
@@ -196,7 +196,7 @@ setup_virtual_environment() {
     fi
     
     print_info "Installing dependencies..."
-    if uv pip install -e .; then
+    if uv pip install browser_cookie3 requests; then
         print_success "Dependencies installed"
     else
         print_error "Failed to install dependencies"
