@@ -5,6 +5,7 @@ Uses browser-cookie3 library to handle encrypted cookies automatically
 Includes interactive authentication flow when no cookies are found
 """
 
+from logger import log_success, log_warning, log_error, log_info, log_start, log_end
 import sys
 import os
 import json
@@ -30,10 +31,12 @@ def get_browser_cookies_for_domain(browser_id, domain):
     if not browser_func:
         if browser_id == 'com.apple.safari':
             colored_print("[ERROR] Safari is not supported due to strict sandboxing restrictions", Colors.RED)
+            log_error("Safari is not supported due to strict sandboxing restrictions")
             colored_print("[INFO] Please use Chrome, Edge, Firefox, or Brave for automated token extraction", Colors.CYAN)
             colored_print("[INFO] You can temporarily set one of these as your default browser", Colors.CYAN)
         else:
             colored_print(f"[ERROR] Unsupported browser: {browser_id}", Colors.RED)
+            log_error(f"Unsupported browser: {browser_id}")
         return {}
     
     # Try multiple approaches for better compatibility
@@ -112,6 +115,7 @@ def test_api_key_with_cookies(cookies, config):
     final_token = token_value or oauth_id_token_value
     if not final_token:
         colored_print("[ERROR] No bearer token cookies found", Colors.RED)
+        log_error("No bearer token cookies found")
         return False
     
     # Prepare headers and cookies for API request
@@ -149,14 +153,17 @@ def test_api_key_with_cookies(cookies, config):
         
         if response.status_code == 200:
             colored_print("[SUCCESS] Bearer token extracted and validated", Colors.GREEN)
+            log_success("Bearer token extracted and validated")
             colored_print("[INFO] Token is working - use renew_key.py to generate API key with this token", Colors.CYAN)
             return True
         elif response.status_code == 401:
             colored_print("[ERROR] Token validation failed: Unauthorized (401)", Colors.RED)
+            log_error("Token validation failed: Unauthorized (401)")
             colored_print("[INFO] Token may be expired or invalid", Colors.YELLOW)
             return False
         elif response.status_code == 403:
             colored_print("[ERROR] Token validation failed: Forbidden (403)", Colors.RED)
+            log_error("Token validation failed: Forbidden (403)")
             colored_print("[INFO] Token may not have required permissions", Colors.YELLOW)
             return False
         else:
@@ -166,12 +173,15 @@ def test_api_key_with_cookies(cookies, config):
         
     except requests.exceptions.Timeout:
         colored_print("[ERROR] Token validation timed out", Colors.RED)
+        log_error("Token validation timed out")
         return False
     except requests.exceptions.ConnectionError:
         colored_print("[ERROR] Connection error during token validation", Colors.RED)
+        log_error("Connection error during token validation")
         return False
     except Exception as e:
         colored_print(f"[ERROR] API request error: {e}", Colors.RED)
+        log_error(f"API request error: {e}")
         return False
 
 def open_browser_for_authentication(browser_info, config):
@@ -205,6 +215,7 @@ def open_browser_for_authentication(browser_info, config):
         
     except subprocess.CalledProcessError as e:
         colored_print(f"[ERROR] Failed to open browser: {e}", Colors.RED)
+        log_error(f"Failed to open browser: {e}")
         return False
     except KeyboardInterrupt:
         colored_print("\n[ERROR] Authentication cancelled by user", Colors.RED)
@@ -270,6 +281,7 @@ def get_bearer_token():
 
 def main():
     """Main function"""
+    log_start()
     colored_print(" Extracting JWT token from default browser session data...", Colors.CYAN)
     
     # Load configuration
@@ -280,6 +292,8 @@ def main():
     browser_info = get_browser_info()
     if not browser_info or not browser_info.get('bundle_id'):
         colored_print("[ERROR] Could not detect default browser", Colors.RED)
+        log_error("Could not detect default browser")
+        log_end()
         sys.exit(1)
     
     browser_id = browser_info.get('bundle_id')
@@ -291,6 +305,7 @@ def main():
     
     if not cookies:
         colored_print("[ERROR] No cookies found in browser session", Colors.RED)
+        log_error("No cookies found in browser session")
         colored_print("[AUTH] Starting interactive authentication flow...", Colors.YELLOW)
         
         # Open browser for interactive authentication
@@ -298,6 +313,8 @@ def main():
         
         if not auth_success:
             colored_print("[ERROR] Interactive authentication failed", Colors.RED)
+            log_error("Interactive authentication failed")
+            log_end()
             sys.exit(1)
         
         # Retry cookie extraction after authentication
@@ -311,6 +328,7 @@ def main():
             colored_print("   3. Try running the script again", Colors.WHITE)
             if browser_id == 'com.apple.safari':
                 colored_print("   4. For Safari: Grant Terminal 'Full Disk Access' in System Preferences", Colors.WHITE)
+            log_end()
             sys.exit(1)
     
     # Test API key generation with extracted cookies
@@ -318,7 +336,11 @@ def main():
     
     if not success:
         colored_print("[ERROR] FAILED TO EXTRACT BEARER TOKEN FROM COOKIES", Colors.RED)
+        log_error("Failed to extract bearer token from cookies")
+        log_end()
         sys.exit(1)
+    
+    log_end()
 
 if __name__ == "__main__":
     main()

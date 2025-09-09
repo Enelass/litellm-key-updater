@@ -4,6 +4,7 @@ Request API key using extracted bearer token and cookies
 Separated from get_bearer.py to keep token extraction and API requests separate
 """
 
+from logger import log_success, log_warning, log_error, log_info, log_start, log_end
 import sys
 import os
 import json
@@ -66,6 +67,7 @@ def request_api_key_with_token(final_token, cookies, silent=False):
                 if data.get('api_key'):
                     if not silent:
                         colored_print("[SUCCESS] Success! Created API key", Colors.GREEN)
+                        log_success("API key created successfully")
                         print(f"API_KEY: {data['api_key']}")
                     return (True, data['api_key'])
             except:
@@ -82,6 +84,7 @@ def request_api_key_with_token(final_token, cookies, silent=False):
                 if data.get('api_key'):
                     if not silent:
                         colored_print("[SUCCESS] Retrieved existing API key", Colors.GREEN)
+                        log_success("Retrieved existing API key")
                         print(f"API_KEY: {data['api_key']}")
                     return (True, data['api_key'])
             except:
@@ -89,16 +92,19 @@ def request_api_key_with_token(final_token, cookies, silent=False):
         
         if not silent:
             colored_print(f"[ERROR] API request failed: {response.status_code}", Colors.RED)
+            log_error(f"API request failed: {response.status_code}")
             print(f"Response: {response.text[:500]}", file=sys.stderr)
         return (False, None)
         
     except Exception as e:
         if not silent:
             colored_print(f"[ERROR] API request error: {e}", Colors.RED)
+            log_error(f"API request error: {e}")
         return (False, None)
 
 def main():
     """Main function for standalone usage"""
+    log_start()
     parser = argparse.ArgumentParser(
         description="Generate API key using bearer token from browser cookies",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -125,6 +131,8 @@ Examples:
     
     if not browser_info or not browser_info.get('bundle_id'):
         colored_print("[ERROR] Could not detect default browser", Colors.RED)
+        log_error("Could not detect default browser")
+        log_end()
         sys.exit(1)
     
     # Extract cookies and token from browser
@@ -133,6 +141,7 @@ Examples:
     
     if not cookies:
         colored_print("[ERROR] No cookies found in browser session", Colors.RED)
+        log_error("No cookies found in browser session")
         colored_print("[INFO] Please make sure you're logged in to the service in your browser", Colors.CYAN)
         sys.exit(1)
     
@@ -145,15 +154,18 @@ Examples:
     
     if not token_value:
         colored_print("[ERROR] No bearer token found in cookies", Colors.RED)
+        log_error("No bearer token found in cookies")
         colored_print("[INFO] Please make sure you're logged in and authenticated", Colors.CYAN)
         sys.exit(1)
     
     colored_print(f"[SUCCESS] Found bearer token in {browser_info.get('name', 'browser')} cookies", Colors.GREEN)
+    log_success(f"Found bearer token in {browser_info.get('name', 'browser')} cookies")
     
     # Interactive confirmation unless --silent is specified
     if not args.silent:
         print("", file=sys.stderr)
         colored_print("[WARNING] This will generate a new API key for your account.", Colors.YELLOW)
+        log_warning("User initiated API key generation")
         colored_print("[INFO] Note: This may invalidate existing API keys.", Colors.CYAN)
         print("", file=sys.stderr)
         
@@ -161,6 +173,7 @@ Examples:
             response = input("Do you want to proceed with API key generation? [y/N]: ").strip().lower()
             if response not in ['y', 'yes']:
                 colored_print("[ERROR] API key generation cancelled by user", Colors.RED)
+                log_info("API key generation cancelled by user")
                 sys.exit(0)
         except KeyboardInterrupt:
             colored_print("\n[ERROR] API key generation cancelled by user", Colors.RED)
@@ -174,6 +187,7 @@ Examples:
     
     if success and api_key:
         colored_print("[SUCCESS] API key generated successfully!", Colors.GREEN)
+        log_success("API key generated successfully")
         
         # Copy to clipboard
         if copy_to_clipboard(api_key):
@@ -181,9 +195,12 @@ Examples:
         else:
             print("⚠️  Could not copy to clipboard (pbcopy not available)", file=sys.stderr)
         
+        log_end()
         sys.exit(0)
     else:
         colored_print("[ERROR] Failed to generate API key", Colors.RED)
+        log_error("Failed to generate API key")
+        log_end()
         sys.exit(1)
 
 if __name__ == "__main__":

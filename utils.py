@@ -10,6 +10,8 @@ cookies, to request a bearer token for LiteLLM endpoint.
 Additional system information gathering for comprehensive logging.
 """
 
+from logger import log_success, log_warning, log_error, log_info, log_start, log_end
+
 import os
 import sys
 import json
@@ -79,9 +81,11 @@ def load_config():
             return json.load(f)
     except FileNotFoundError:
         colored_print("[ERROR] config.json not found", Colors.RED)
+        log_error("config.json not found")
         sys.exit(1)
     except json.JSONDecodeError:
         colored_print("[ERROR] Invalid JSON in config.json", Colors.RED)
+        log_error("Invalid JSON in config.json")
         sys.exit(1)
 
 
@@ -306,7 +310,9 @@ def display_system_info():
 
 def main():
     """Main function when utils.py is run directly"""
+    log_start()
     display_system_info()
+    log_end()
     return 0
 
 

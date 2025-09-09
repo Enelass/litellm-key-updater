@@ -8,6 +8,7 @@ This script:
 2. Finds where API keys are declared (env vars, config files, etc.)
 """
 
+from logger import log_success, log_warning, log_error, log_info, log_start, log_end
 import os
 import re
 import json
@@ -98,8 +99,7 @@ def log_message(message, log_file=None):
     else:
         print(message)
     
-    if log_file:
-        log_file.write(message + "\n")
+    # File logging disabled - no file output
 def check_command_exists(command):
     """Check if a command exists in PATH"""
     try:
@@ -276,6 +276,7 @@ def search_environment_variables(log_file=None):
     if found_vars:
         for var_name, value in found_vars:
             log_message(f"  [SUCCESS] {var_name}: {obfuscate_key(value)}", log_file)
+            log_success(f"Environment variable found: {var_name}: {obfuscate_key(value)}")
     else:
         log_message("  ❌ No sk- API keys found in environment variables", log_file)
     
@@ -481,6 +482,7 @@ def search_keychain(log_file=None):
     if found_services:
         for service, password in found_services:
             log_message(f"  [SUCCESS] '{service}': {obfuscate_key(password)}", log_file)
+            log_success(f"Keychain service found: '{service}': {obfuscate_key(password)}")
     else:
         log_message("  ❌ No API keys found in keychain", log_file)
     
@@ -505,6 +507,7 @@ def verify_api_key_in_environment(target_key, all_keys, log_file):
     if not environment_keys:
         log_message("❌ No sk- keys found in environment configuration", log_file)
         log_message("[WARNING]  This suggests the active key is not properly stored in secure locations", log_file)
+        log_warning("Active key is not properly stored in secure locations")
         return
     
     # Check if target key matches any environment key
@@ -519,6 +522,7 @@ def verify_api_key_in_environment(target_key, all_keys, log_file):
     
     if matching_keys:
         log_message(f"[SUCCESS] Active key matches environment configuration", log_file)
+        log_success("Active key matches environment configuration")
         log_message(f" Found in {len(matching_keys)} location(s):", log_file)
         for match in matching_keys:
             location_desc = f"{match['type'].replace('_', ' ').title()}"
@@ -550,6 +554,7 @@ def verify_api_key_in_environment(target_key, all_keys, log_file):
 
 def main():
     """Main function to analyze environment for API key usage"""
+    log_start()
     # Parse command line arguments
     parser = argparse.ArgumentParser(description='Analyze environment for API key usage')
     parser.add_argument('--verify-key', type=str, help='Verify if this API key matches environment configuration')
@@ -564,10 +569,10 @@ def main():
         import os
         os.system('clear' if os.name == 'posix' else 'cls')
     
-    # Create log file
-    log_filename = "environment_analysis.log"
+    # Log to console only (no file output)
+    log_file = None
     
-    with open(log_filename, 'w') as log_file:
+    if False:  # Disabled file logging
         # Write header
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         log_message("=" * 60, log_file)
@@ -596,6 +601,7 @@ def main():
         # Step 2.5: Verify provided API key if specified
         if args.verify_key:
             verify_api_key_in_environment(args.verify_key, all_keys, log_file)
+            log_end()
             return  # Exit early when just verifying a key
         
         # Step 3: Summarize findings
@@ -667,16 +673,19 @@ def main():
                 secrets_count = len(scanner.secrets_found)
                 if secrets_count > 0:
                     log_message("[WARNING] Recommendation: Do not hardcode credentials - use secure storage methods", log_file)
+                    log_warning("Hardcoded credentials detected - use secure storage methods")
                 if not args.no_browser:
                     import webbrowser
                     webbrowser.open(f'file://{Path(report_path).absolute()}')
             else:
                 log_message("[SUCCESS] Recommendation: Nil", log_file)
+                log_success("Security scan completed - no issues found")
         except Exception as e:
             log_message(f"[SECURITY] Security report saved to: security_report.html", log_file)
             log_message("[WARNING] Recommendation: Review security configuration", log_file)
         
         log_message("[SUMMARY] Analysis Complete!", log_file)
+        log_end()
 
 if __name__ == "__main__":
     main()

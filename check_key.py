@@ -4,6 +4,7 @@ Check current API key using extracted bearer token and cookies
 Similar to renew_key.py but only retrieves existing API key without generating new ones
 """
 
+from logger import log_success, log_warning, log_error, log_info, log_start, log_end
 import sys
 import argparse
 import json
@@ -67,6 +68,7 @@ def validate_api_key(api_key, final_token, cookies):
                 return False
         elif response.status_code == 403:
             colored_print("[ERROR] Current API key lacks permissions", Colors.RED)
+            log_error("Current API key lacks permissions")
             return False
         else:
             print(f"⚠️  API key validation unclear: HTTP {response.status_code}", file=sys.stderr)
@@ -125,6 +127,7 @@ def check_current_api_key(final_token, cookies, return_key=False):
                     api_key = data['api_key']
                     obfuscated_key = obfuscate_key(api_key)
                     timestamp_print("[SUCCESS] Current API key retrieved: {}", Colors.GREEN, obfuscated_key)
+                    log_success(f"Current API key retrieved: {obfuscated_key}")
                     
                     # Now validate if the key is still active
                     print("", file=sys.stderr)
@@ -196,6 +199,7 @@ def check_current_api_key(final_token, cookies, return_key=False):
 
 def main():
     """Main function for standalone usage"""
+    log_start()
     parser = argparse.ArgumentParser(
         description="Check current API key using bearer token from browser cookies",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -216,6 +220,7 @@ Examples:
     
     if not browser_info or not browser_info.get('bundle_id'):
         colored_print("[ERROR] Could not detect default browser", Colors.RED)
+        log_error("Could not detect default browser")
         sys.exit(1)
     
     # Extract cookies and token from browser
@@ -233,6 +238,7 @@ Examples:
     
     if not cookies:
         colored_print("[ERROR] No cookies found in browser session", Colors.RED)
+        log_error("No cookies found in browser session")
         colored_print("[INFO] Please make sure you're logged in to the service in your browser", Colors.YELLOW)
         sys.exit(1)
     
@@ -247,18 +253,18 @@ Examples:
     
     if not token_value:
         colored_print("[ERROR] No bearer token found in cookies", Colors.RED)
+        log_error("No bearer token found in cookies")
         colored_print("[INFO] Please make sure you're logged in and authenticated", Colors.YELLOW)
         sys.exit(1)
     
-    timestamp_print(f"[SUCCESS] Found bearer token in {browser_info.get('name', 'browser')} cookies", Colors.GREEN)
+    timestamp_print(f"[SUCCESS] Found bearer token in {browser_info.get('name', 'browser')} cookies: {obfuscate_key(token_value)}", Colors.GREEN)
+    log_success(f"Found bearer token in {browser_info.get('name', 'browser')} cookies: {obfuscate_key(token_value)}")
     print("")
     
     # Check the current API key
-    success = check_current_api_key(token_value, cookies)
+    success, current_api_key = check_current_api_key(token_value, cookies, return_key=True)
     
     if success:
-        # Get the actual API key for environment analysis
-        success, current_api_key = check_current_api_key(token_value, cookies, return_key=True)
         
         if success and current_api_key:
             # Copy valid API key to clipboard
@@ -322,8 +328,10 @@ Examples:
             except Exception as e:
                 print(f"⚠️  Could not run environment analysis: {e}", file=sys.stderr)
         
+        log_end()
         sys.exit(0)
     else:
+        log_end()
         sys.exit(1)
 
 if __name__ == "__main__":

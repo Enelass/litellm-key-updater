@@ -4,6 +4,7 @@ Security Recommendations Generator
 Variable name-based secrets detection with regex validation
 """
 
+from logger import log_success, log_warning, log_error, log_info, log_start, log_end
 import os
 import re
 import json
@@ -986,6 +987,7 @@ def generate_secure_storage_html():
 
 def main():
     """Main function to run the security scanner"""
+    log_start()
     scanner = SecurityScanner()
     scanner.scan_common_locations()
     
@@ -1003,9 +1005,12 @@ def main():
         webbrowser.open(f'file://{report_file.absolute()}')
     else:
         colored_print("[SUCCESS] No secrets found in scanned locations", Colors.GREEN)
+        log_success("Security scan completed - no secrets found in scanned locations")
         # Still show system status even if no secrets found
         print(f"{system_status['title']}")
         print(f"{system_status['message']}")
+    
+    log_end()
 
 
 if __name__ == "__main__":

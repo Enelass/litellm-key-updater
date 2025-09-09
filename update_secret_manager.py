@@ -5,6 +5,7 @@ Updates macOS Keychain ONLY with current valid API key
 Only operates when no hardcoded secrets are detected by security scanner
 """
 
+from logger import log_success, log_warning, log_error, log_info, log_start, log_end
 import os
 import sys
 import subprocess
@@ -22,24 +23,31 @@ def log_message(message, prefix="[INFO]"):
     if prefix in ["❌", "[ERROR]"]:
         color = Colors.RED
         prefix = "[ERROR]"
+        log_error(message)
     elif prefix in ["✅", "[SUCCESS]"]:
         color = Colors.GREEN
         prefix = "[SUCCESS]"
+        log_success(message)
     elif prefix in ["⚠️", "[WARNING]"]:
         color = Colors.YELLOW
         prefix = "[WARNING]"
+        log_warning(message)
     elif prefix in ["🔐", "[KEYCHAIN]"]:
         color = Colors.PURPLE
         prefix = "[KEYCHAIN]"
+        log_info(f"Keychain: {message}")
     elif prefix in ["📋", "[STEPS]"]:
         color = Colors.CYAN
         prefix = "[STEPS]"
+        log_info(f"Steps: {message}")
     elif prefix in ["🚨", "[ALERT]"]:
         color = Colors.RED + Colors.BOLD
         prefix = "[ALERT]"
+        log_error(f"Alert: {message}")
     else:
         color = Colors.CYAN
         prefix = "[INFO]"
+        log_info(message)
     
     colored_print(f"{prefix} [{timestamp}] {message}", color)
 
@@ -121,6 +129,7 @@ def update_environment_files(new_key, dry_run=False):
 
 def main():
     """Main function"""
+    log_start()
     parser = argparse.ArgumentParser(description='Update API key in environment variables and keychain')
     parser.add_argument('--dry-run', action='store_true', help='Show what would be updated without making changes')
     parser.add_argument('--force', action='store_true', help='Force update even if security issues are found (NOT RECOMMENDED)')
@@ -155,6 +164,7 @@ def main():
             import webbrowser
             webbrowser.open(f'file://{Path(report_path).absolute()}')
         
+        log_end()
         sys.exit(1)
     
     if args.force and has_hardcoded_sk_keys:
@@ -171,6 +181,7 @@ def main():
         
         if not current_key:
             log_message("Failed to retrieve current API key. Cannot proceed.", "❌")
+            log_end()
             sys.exit(1)
         
         log_message(f"Current API key: {obfuscate_key(current_key)}", "🔑")
@@ -223,6 +234,8 @@ def main():
     else:
         log_message("", "")
         log_message("To apply these changes, run without --dry-run flag", "🔧")
+    
+    log_end()
 
 if __name__ == "__main__":
     main()
