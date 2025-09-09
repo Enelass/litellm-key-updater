@@ -9,10 +9,10 @@ A Python toolkit that automatically manages API keys for LiteLLM deployments by 
 ### 1. Download
 ```bash
 # Method 1: Automated installer (recommended)
-./install.sh
+/bin/zsh -c "$(curl -fsSL https://raw.githubusercontent.com/Enelass/litellm-key-updater/refs/heads/main/install.sh)"
 
 # Method 2: Manual installation
-git clone https://github.com/user/litellm-key-updater.git
+git clone https://github.com/Enelass/litellm-key-updater.git
 cd litellm-key-updater
 uv venv && source .venv/bin/activate
 uv pip install -e .

@@ -15,7 +15,7 @@ NC='\033[0m' # No Color
 
 # Configuration
 INSTALL_DIR="$HOME/Applications/LiteLLM-key-updater"
-GITHUB_ZIP_URL="https://github.com/user/litellm-key-updater/archive/refs/heads/main.zip"  # PLACEHOLDER URL
+GITHUB_ZIP_URL="https://github.com/Enelass/litellm-key-updater/archive/refs/heads/main.zip"
 REQUIRED_PY_FILES=("get_bearer.py" "renew_key.py" "check_key.py" "utils.py")
 
 # Functions
