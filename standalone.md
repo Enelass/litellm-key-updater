@@ -78,7 +78,7 @@ python3 analyse_env.py
 ```
 
 **Example Output**:
-![Environment Analysis Screenshot](assets/Analysis Report.png)
+![Environment Analysis Screenshot](assets/Analysis%20Report.png)
 
 ---
 
@@ -98,7 +98,7 @@ python3 report.py
 ```
 
 **Example Output**:
-![Security Report Screenshot](assets/Analysis Report.png)
+![Security Report Screenshot](assets/Analysis%20Report.png)
 
 ---
 
@@ -135,6 +135,9 @@ python3 update_secret_manager.py
 
 **Usage**: Imported by other scripts, not run directly
 
+**Example Output**:
+![Utils Screenshot](assets/utils.png)
+
 ---
 
 ### `install.sh` - Automated Installation
@@ -153,7 +156,7 @@ python3 update_secret_manager.py
 ```
 
 **Example Output**:
-![Installation Screenshot](assets/utils.png)
+*Installation output shown in terminal*
 
 ---
 

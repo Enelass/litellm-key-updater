@@ -2,7 +2,7 @@
 
 ## System Architecture
 
-The LiteLLM Key Updater follows a modular architecture with clear separation of concerns:
+The LiteLLM Key Updater is built using a modular design where each script has a specific job, making the system easier to maintain and understand:
 
 ![System Architecture](assets/Architecture.svg)
 
@@ -10,7 +10,7 @@ The LiteLLM Key Updater follows a modular architecture with clear separation of 
 
 ### Authentication Flow
 
-1. **User** executes `check_key.py`
+1. **User or cron** executes `check_key.py`
 2. **check_key.py** calls `get_bearer.py` to extract browser token
 3. **get_bearer.py** returns bearer token + cookies
 4. **check_key.py** requests current API key from LiteLLM API
