@@ -1,6 +1,7 @@
 # LiteLLM API Key Updater
 
 ![LiteLLM](https://img.shields.io/badge/LiteLLM-1.73-blue?style=flat-square)
+![Open-WebUI](https://img.shields.io/badge/Open--WebUI-v0.6.18-purple?style=flat-square)
 ![macOS](https://img.shields.io/badge/macOS-Tested-green?style=flat-square)
 ![Python](https://img.shields.io/badge/Python-3.8--3.12-orange?style=flat-square)
 
@@ -23,6 +24,14 @@ I like to improve UX while maintaining security, which often isn't the case and 
     😤                         🕐                                   🚨 INSECURE
                               Time                                  (.env files,
                              Wasted                                 ~/.zshrc, etc.)
+                               ↓
+                        🔄 REPEAT EVERY FEW DAYS
+                               ↓
+    User → SSO Auth → Login → Navigate → Click Renew → Copy Key → Paste Insecurely
+     ↓                         ↓                                          ↓
+    😤                         🕐                                   🚨 INSECURE
+   More                       More                                More Security
+Frustration                Time Waste                              Risks
 
 ┌─────────────────────────────────────────────────────────────────────────────────┐
 │                           WITH THIS TOOL                                        │
@@ -32,7 +41,7 @@ I like to improve UX while maintaining security, which often isn't the case and 
     One-time setup:
 
     User → Install → Configure → Done Forever
-      ↓       ↓        ↓          ↓
+             ↓        ↓          ↓
               🚀       ⚙️        🔐
             Quick    Simple    Secure Keychain
             Setup    Config    Auto-rotation
