@@ -20,7 +20,7 @@ python3 check_key.py
 ```
 
 **Example Output**:
-![Check Key Screenshot](assets/screenshot_check_key.png)
+![Check Key Screenshot](assets/check_key.png)
 
 ---
 
@@ -39,7 +39,7 @@ python3 get_bearer.py
 ```
 
 **Example Output**:
-![Bearer Token Screenshot](assets/screenshot_bearer_token.png)
+![Bearer Token Screenshot](assets/get_bearer.png)
 
 ---
 
@@ -58,7 +58,7 @@ python3 renew_key.py
 ```
 
 **Example Output**:
-![Renew Key Screenshot](assets/screenshot_renew_key.png)
+![Renew Key Screenshot](assets/renew_key.png)
 
 ---
 
@@ -78,7 +78,7 @@ python3 analyse_env.py
 ```
 
 **Example Output**:
-![Environment Analysis Screenshot](assets/screenshot_env_analysis.png)
+![Environment Analysis Screenshot](assets/Analysis Report.png)
 
 ---
 
@@ -98,7 +98,7 @@ python3 report.py
 ```
 
 **Example Output**:
-![Security Report Screenshot](assets/screenshot_security_report.png)
+![Security Report Screenshot](assets/Analysis Report.png)
 
 ---
 
@@ -117,7 +117,7 @@ python3 update_secret_manager.py
 ```
 
 **Example Output**:
-![Secret Manager Screenshot](assets/screenshot_secret_manager.png)
+![Secret Manager Screenshot](assets/update_secret_manager.png)
 
 ---
 
@@ -153,7 +153,7 @@ python3 update_secret_manager.py
 ```
 
 **Example Output**:
-![Installation Screenshot](assets/screenshot_installation.png)
+![Installation Screenshot](assets/utils.png)
 
 ---
 

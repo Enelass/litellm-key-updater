@@ -4,76 +4,31 @@
 
 The LiteLLM Key Updater follows a modular architecture with clear separation of concerns:
 
-```mermaid
-graph TB
-    subgraph "Core Components"
-        A[check_key.py] --> B[get_bearer.py]
-        A --> C[renew_key.py]
-        A --> D[analyse_env.py]
-        A --> E[utils.py]
-        
-        F[report.py] --> D
-        F --> E
-        
-        G[update_secret_manager.py] --> A
-        G --> F
-    end
-    
-    subgraph "External Dependencies"
-        H[Browser Cookies]
-        I[macOS Keychain]
-        J[VSCode Extensions]
-        K[Environment Variables]
-        L[Configuration Files]
-    end
-    
-    subgraph "LiteLLM API"
-        M[/api/v1/auths/api_key]
-        N[/api/v1/models]
-    end
-    
-    B --> H
-    D --> I
-    D --> J
-    D --> K
-    E --> L
-    
-    A --> M
-    A --> N
-    C --> M
-```
+![System Architecture](assets/Architecture.svg)
 
 ## Data Flow
 
-```mermaid
-sequenceDiagram
-    participant U as User
-    participant CK as check_key.py
-    participant GB as get_bearer.py
-    participant RK as renew_key.py
-    participant AE as analyse_env.py
-    participant API as LiteLLM API
-    
-    U->>CK: Execute script
-    CK->>GB: Extract browser token
-    GB-->>CK: Bearer token + cookies
-    CK->>API: Request current API key
-    API-->>CK: API key response
-    CK->>API: Validate key permissions
-    API-->>CK: Validation result
-    
-    alt Key Valid
-        CK->>AE: Cross-reference environment
-        AE-->>CK: Environment analysis
-        CK-->>U: Success + Analysis
-    else Key Expired
-        CK->>RK: Auto-renewal
-        RK->>API: Generate new key
-        API-->>RK: New API key
-        RK-->>CK: Renewal success
-        CK-->>U: Key renewed
-    end
-```
+### Authentication Flow
+
+1. **User** executes `check_key.py`
+2. **check_key.py** calls `get_bearer.py` to extract browser token
+3. **get_bearer.py** returns bearer token + cookies
+4. **check_key.py** requests current API key from LiteLLM API
+5. **LiteLLM API** returns API key response
+6. **check_key.py** validates key permissions against API
+7. **LiteLLM API** returns validation result
+
+**If Key Valid:**
+- **check_key.py** calls `analyse_env.py` to cross-reference environment
+- **analyse_env.py** returns environment analysis
+- **check_key.py** returns success + analysis to user
+
+**If Key Expired:**
+- **check_key.py** calls `renew_key.py` for auto-renewal
+- **renew_key.py** generates new key via LiteLLM API
+- **LiteLLM API** returns new API key
+- **renew_key.py** returns renewal success
+- **check_key.py** returns key renewed status to user
 
 ## Module Responsibilities
 
