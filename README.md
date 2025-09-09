@@ -2,7 +2,7 @@
 
 ![LiteLLM](https://img.shields.io/badge/LiteLLM-1.73-blue?style=flat-square)
 ![macOS](https://img.shields.io/badge/macOS-Tested-green?style=flat-square)
-![Python](https://img.shields.io/badge/Python-3.8+-orange?style=flat-square)
+![Python](https://img.shields.io/badge/Python-3.8--3.12-orange?style=flat-square)
 
 **sk- API Key renewal on MacOS**
 

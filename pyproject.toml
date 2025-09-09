@@ -6,7 +6,7 @@ authors = [
     {name = "Florian Bidabe", email = "florian@photonsec.com.au"}
 ]
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.8,<3.13"
 dependencies = [
     "browser_cookie3>=0.20.1",
     "requests>=2.25.0",

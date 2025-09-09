@@ -186,11 +186,12 @@ setup_virtual_environment() {
         return 1
     fi
     
-    print_info "Creating virtual environment..."
-    if uv venv; then
-        print_success "Virtual environment created"
+    print_info "Creating virtual environment with Python 3.12..."
+    if uv venv --python 3.12; then
+        print_success "Virtual environment created with Python 3.12"
     else
-        print_error "Failed to create virtual environment"
+        print_error "Failed to create virtual environment with Python 3.12"
+        print_info "Ensure Python 3.12 is installed on your system"
         return 1
     fi
     
