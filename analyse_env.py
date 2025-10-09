@@ -554,12 +554,16 @@ def verify_api_key_in_environment(target_key, all_keys, log_file):
 
 def main():
     """Main function to analyze environment for API key usage"""
-    log_start()
     # Parse command line arguments
     parser = argparse.ArgumentParser(description='Analyze environment for API key usage')
     parser.add_argument('--verify-key', type=str, help='Verify if this API key matches environment configuration')
     parser.add_argument('--no-browser', action='store_true', help='Do not open browser for HTML report')
+    parser.add_argument('--no-logging', action='store_true', help='Skip START/END logging (for subprocess calls)')
     args = parser.parse_args()
+    
+    # Only log start if not called as subprocess
+    if not args.no_logging:
+        log_start()
     
     # Refresh environment variables from shell config
     refresh_environment()
@@ -601,7 +605,11 @@ def main():
         # Step 2.5: Verify provided API key if specified
         if args.verify_key:
             verify_api_key_in_environment(args.verify_key, all_keys, log_file)
-            log_end()
+            # Log report generation for verification mode
+            log_success("Environment analysis completed", "analyse_env.py")
+            
+            if not args.no_logging:
+                log_end()
             return  # Exit early when just verifying a key
         
         # Step 3: Summarize findings
@@ -685,7 +693,11 @@ def main():
             log_message("[WARNING] Recommendation: Review security configuration", log_file)
         
         log_message("[SUMMARY] Analysis Complete!", log_file)
-        log_end()
+        # Log report generation
+        log_success("Environment report generated and analysed", "analyse_env.py")
+        
+        if not args.no_logging:
+            log_end()
 
 if __name__ == "__main__":
     main()

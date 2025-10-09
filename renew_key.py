@@ -22,7 +22,7 @@ def copy_to_clipboard(text):
     except Exception:
         return False
 
-def request_api_key_with_token(final_token, cookies, silent=False):
+def request_api_key_with_token(final_token, cookies, silent=False, no_logging=False):
     """Request API key using bearer token and cookies
     
     Returns:
@@ -67,7 +67,8 @@ def request_api_key_with_token(final_token, cookies, silent=False):
                 if data.get('api_key'):
                     if not silent:
                         colored_print("[SUCCESS] Success! Created API key", Colors.GREEN)
-                        log_success("API key created successfully")
+                        if not no_logging:
+                            log_success("API key created successfully")
                         print(f"API_KEY: {data['api_key']}")
                     return (True, data['api_key'])
             except:
@@ -84,7 +85,8 @@ def request_api_key_with_token(final_token, cookies, silent=False):
                 if data.get('api_key'):
                     if not silent:
                         colored_print("[SUCCESS] Retrieved existing API key", Colors.GREEN)
-                        log_success("Retrieved existing API key")
+                        if not no_logging:
+                            log_success("Retrieved existing API key")
                         print(f"API_KEY: {data['api_key']}")
                     return (True, data['api_key'])
             except:

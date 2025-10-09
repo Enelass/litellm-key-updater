@@ -52,14 +52,20 @@ class LiteLLMLogger:
         self._write_log("INFO", message)
     
     def start(self, message):
-        """Log start message"""
+        """Log start message with separator"""
+        # Add separator before START
+        separator = "=" * 50 + "\n"
+        try:
+            with open(self.log_file_path, 'a', encoding='utf-8') as f:
+                f.write(separator)
+        except Exception as e:
+            print(f"[LOGGER ERROR] Could not write separator to {self.log_file_path}: {e}")
+        
         self._write_log("START", message)
     
     def end(self, message):
         """Log end message"""
         self._write_log("END", message)
-        """Log info message (for important steps)"""
-        self._write_log("INFO", message)
 
 # Global logger instance
 _global_logger = None

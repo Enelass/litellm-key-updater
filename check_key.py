@@ -50,16 +50,38 @@ def validate_api_key(api_key, final_token, cookies):
         
         if response.status_code == 200:
             return True
-        elif response.status_code == 401:
-            colored_print("[INVALID] Current API key is expired or invalid", Colors.RED)
+        elif response.status_code in [400, 401]:
+            if response.status_code == 400:
+                colored_print("[INVALID] Current API key is expired or invalid (HTTP 400)", Colors.YELLOW)
+            else:
+                colored_print("[INVALID] Current API key is expired or invalid", Colors.YELLOW)
             colored_print("[RENEW] Automatically renewing API key...", Colors.YELLOW)
-            
+
             # Call renewal function
             try:
-                success, new_key = request_api_key_with_token(final_token, cookies, silent=True)
+                success, new_key = request_api_key_with_token(final_token, cookies, silent=True, no_logging=True)
                 if success and new_key:
                     print(f"✅ New API key generated: {obfuscate_key(new_key)}", file=sys.stderr)
-                    return True
+                    
+                    # Update macOS keychain with new API key
+                    try:
+                        import subprocess
+                        import os
+                        # Delete existing keychain entry
+                        subprocess.run(['security', 'delete-generic-password', '-s', 'LITELLM_API_KEY'],
+                                     capture_output=True, check=False)
+                        # Add new keychain entry
+                        result = subprocess.run(['security', 'add-generic-password', '-s', 'LITELLM_API_KEY',
+                                               '-a', os.getenv('USER', 'user'), '-w', new_key],
+                                              capture_output=True, text=True)
+                        if result.returncode == 0:
+                            print("🔐 Keychain updated with new API key", file=sys.stderr)
+                        else:
+                            print(f"⚠️  Failed to update keychain: {result.stderr.strip()}", file=sys.stderr)
+                    except Exception as keychain_error:
+                        print(f"⚠️  Keychain update error: {keychain_error}", file=sys.stderr)
+                    
+                    return new_key  # Return the new key instead of True
                 else:
                     print("❌ Failed to generate new API key", file=sys.stderr)
                     return False
@@ -132,14 +154,27 @@ def check_current_api_key(final_token, cookies, return_key=False):
                     # Now validate if the key is still active
                     print("", file=sys.stderr)
                     timestamp_print("[INFO] Validating API key status...", Colors.CYAN)
-                    is_valid = validate_api_key(api_key, final_token, cookies)
+                    validation_result = validate_api_key(api_key, final_token, cookies)
                     
-                    if is_valid:
+                    # Handle case where validate_api_key returns a new key (renewal occurred)
+                    if isinstance(validation_result, str):
+                        # A new key was generated during validation
+                        new_api_key = validation_result
                         timestamp_print("[VALID] Current API key is active", Colors.GREEN)
-                    
-                    if return_key:
-                        return (is_valid, api_key if is_valid else None)
-                    return is_valid
+                        if return_key:
+                            return (True, new_api_key)
+                        return True
+                    elif validation_result:
+                        # Original key is still valid
+                        timestamp_print("[VALID] Current API key is active", Colors.GREEN)
+                        if return_key:
+                            return (True, api_key)
+                        return True
+                    else:
+                        # Key is invalid and renewal failed
+                        if return_key:
+                            return (False, None)
+                        return False
                 elif data.get('keys') and isinstance(data['keys'], list) and len(data['keys']) > 0:
                     # Handle case where API returns array of keys
                     api_key = data['keys'][0]
@@ -206,10 +241,20 @@ def main():
         epilog="""
 Examples:
   python3 check_key.py               # Check current API key and validate if it's still active
+  python3 check_key.py --renew       # Force renewal of API key regardless of current status
         """
     )
     
+    parser.add_argument('--renew', action='store_true',
+                       help='Force renewal of API key regardless of current status')
+    
     args = parser.parse_args()
+    
+    # Log command line arguments
+    if args.renew:
+        log_info("Command line flag: --renew (forced renewal requested)")
+    else:
+        log_info("Command line flag: none (normal validation mode)")
     
     colored_print("LiteLLM User API Key Validation...", Colors.PURPLE + Colors.BOLD)
     print("")
@@ -217,6 +262,9 @@ Examples:
     # Load configuration and get browser info
     config = load_config()
     browser_info = get_browser_info()
+    
+    # Log browser info
+    log_info(f"Default browser: {browser_info['name']}", "utils.py")
     
     if not browser_info or not browser_info.get('bundle_id'):
         colored_print("[ERROR] Could not detect default browser", Colors.RED)
@@ -258,15 +306,93 @@ Examples:
         sys.exit(1)
     
     timestamp_print(f"[SUCCESS] Found bearer token in {browser_info.get('name', 'browser')} cookies: {obfuscate_key(token_value)}", Colors.GREEN)
-    log_success(f"Found bearer token in {browser_info.get('name', 'browser')} cookies: {obfuscate_key(token_value)}")
+    log_success(f"Found bearer token in {browser_info.get('name', 'browser')} cookies: {obfuscate_key(token_value)}", "get_bearer.py")
     print("")
     
-    # Check the current API key
-    success, current_api_key = check_current_api_key(token_value, cookies, return_key=True)
+    # Handle forced renewal
+    if args.renew:
+        timestamp_print("[FORCED] Renewing API key as requested...", Colors.YELLOW)
+        log_info("Forced API key renewal requested")
+        
+        try:
+            from renew_key import request_api_key_with_token
+            success, new_api_key = request_api_key_with_token(token_value, cookies, silent=False, no_logging=True)
+            
+            if success and new_api_key:
+                timestamp_print("[SUCCESS] New API key generated", Colors.GREEN)
+                log_success(f"New API key generated: {obfuscate_key(new_api_key)}", "renew_key.py")
+                
+                # Update macOS keychain with new API key
+                try:
+                    import subprocess
+                    import os
+                    # Delete existing keychain entry
+                    subprocess.run(['security', 'delete-generic-password', '-s', 'LITELLM_API_KEY'],
+                                 capture_output=True, check=False)
+                    # Add new keychain entry
+                    result = subprocess.run(['security', 'add-generic-password', '-s', 'LITELLM_API_KEY',
+                                           '-a', os.getenv('USER', 'user'), '-w', new_api_key],
+                                          capture_output=True, text=True)
+                    if result.returncode == 0:
+                        print("🔐 Keychain updated with new API key", file=sys.stderr)
+                    else:
+                        print(f"⚠️  Failed to update keychain: {result.stderr.strip()}", file=sys.stderr)
+                except Exception as keychain_error:
+                    print(f"⚠️  Keychain update error: {keychain_error}", file=sys.stderr)
+                
+                # Copy to clipboard
+                if copy_to_clipboard(new_api_key):
+                    print(f"✅ New API key copied to clipboard: {obfuscate_key(new_api_key)}", file=sys.stderr)
+                else:
+                    print(f"✅ New API key generated: {obfuscate_key(new_api_key)}", file=sys.stderr)
+                    print(f"📋 API Key: {new_api_key}")
+                
+                # Set current_api_key for environment analysis
+                current_api_key = new_api_key
+                success = True
+            else:
+                timestamp_print("[ERROR] Failed to generate new API key", Colors.RED)
+                log_error("Failed to generate new API key during forced renewal")
+                log_end()
+                sys.exit(1)
+                
+        except Exception as e:
+            timestamp_print(f"[ERROR] Error during forced renewal: {e}", Colors.RED)
+            log_error(f"Error during forced renewal: {e}")
+            log_end()
+            sys.exit(1)
+    else:
+        # Check the current API key
+        success, current_api_key = check_current_api_key(token_value, cookies, return_key=True)
     
     if success:
         
         if success and current_api_key:
+            # Update keychain if current key differs from keychain key
+            try:
+                import subprocess
+                import os
+                # Check current keychain key
+                keychain_result = subprocess.run(['security', 'find-generic-password', '-s', 'LITELLM_API_KEY', '-w'],
+                                               capture_output=True, text=True, check=False)
+                keychain_key = keychain_result.stdout.strip() if keychain_result.returncode == 0 else None
+                
+                if keychain_key != current_api_key:
+                    print(f"🔄 Keychain key differs from active key, updating...", file=sys.stderr)
+                    # Delete existing keychain entry
+                    subprocess.run(['security', 'delete-generic-password', '-s', 'LITELLM_API_KEY'],
+                                 capture_output=True, check=False)
+                    # Add new keychain entry
+                    result = subprocess.run(['security', 'add-generic-password', '-s', 'LITELLM_API_KEY',
+                                           '-a', os.getenv('USER', 'user'), '-w', current_api_key],
+                                          capture_output=True, text=True)
+                    if result.returncode == 0:
+                        print("🔐 Keychain synchronized with active API key", file=sys.stderr)
+                    else:
+                        print(f"⚠️  Failed to update keychain: {result.stderr.strip()}", file=sys.stderr)
+            except Exception as keychain_error:
+                print(f"⚠️  Keychain sync error: {keychain_error}", file=sys.stderr)
+            
             # Copy valid API key to clipboard
             if copy_to_clipboard(current_api_key):
                 print(f"✅ Valid API key copied to clipboard: {obfuscate_key(current_api_key)}", file=sys.stderr)
@@ -281,8 +407,12 @@ Examples:
             try:
                 import subprocess
                 result = subprocess.run([
-                    sys.executable, 'analyse_env.py', '--verify-key', current_api_key
+                    sys.executable, 'analyse_env.py', '--verify-key', current_api_key, '--no-logging'
                 ], capture_output=True, text=True, timeout=30)
+                
+                # Log analyse_env completion (it uses --no-logging to avoid duplicate START/END)
+                if result.returncode == 0:
+                    log_success("Environment analysis completed", "analyse_env.py")
                 
                 # Display the verification results to stdout
                 if result.stdout.strip():
@@ -296,7 +426,7 @@ Examples:
                     print("Attempting to synchronize environment with active key...", file=sys.stderr)
                     try:
                         # Pass the current active key to update_secret_manager.py
-                        sync_result = subprocess.run([sys.executable, './update_secret_manager.py', '--key', current_api_key],
+                        sync_result = subprocess.run([sys.executable, './update_secretmgr.py', '--key', current_api_key, '--no-logging'],
                                                    capture_output=True, text=True, cwd='.')
                         if sync_result.returncode == 0:
                             print("Environment synchronization completed successfully", file=sys.stderr)
@@ -305,7 +435,7 @@ Examples:
                             # Regenerate HTML report after successful synchronization
                             print("Updating security report...", file=sys.stderr)
                             try:
-                                report_result = subprocess.run([sys.executable, 'analyse_env.py', '--no-browser'],
+                                report_result = subprocess.run([sys.executable, 'analyse_env.py', '--no-browser', '--no-logging'],
                                                             capture_output=True, text=True, timeout=30)
                                 if report_result.returncode == 0:
                                     print("Security report updated successfully", file=sys.stderr)

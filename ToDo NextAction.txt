@@ -1,0 +1,17 @@
+Test with invalid Ping Token: Before PingID sign-in
+
+Test with expired API Key: Have to wait about a week
+
+Code a Roo Code update
+
+Get Beta testers
+
+
+Create a Claude Code deployer
+> Check claude -p "test"
+> Check proxy settings
+> Check SSL Env Var
+> Check if claude exists
+> Check permissions of files (claude bin and settings.json)
+> Check claude Var (key, model, etc... with regex)
+> Check claude doctor
