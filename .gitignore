@@ -12,6 +12,7 @@ environment_analysis.log
 # Temporary files
 *.tmp
 *.temp
+nohup.out
 
 # macOS specific files
 .DS_Store
