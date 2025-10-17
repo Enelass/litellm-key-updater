@@ -127,9 +127,9 @@ If step 3 is successful, you can enable automatic daily key checking:
 
 ## Documentation
 
-- **[Standalone Scripts Guide](standalone.md)** - Detailed description of each Python script with screenshots
-- **[Architecture Overview](Architecture.md)** - System design, data flow, and integration points  
-- **[Authentication Analysis](auth_analysis.md)** - Deep dive into the multi-layer authentication system
+- **[Standalone Scripts Guide](docs/standalone.md)** - Detailed description of each Python script with screenshots
+- **[Architecture Overview](docs/Architecture.md)** - System design, data flow, and integration points
+- **[Authentication Analysis](docs/auth_analysis.md)** - Deep dive into the multi-layer authentication system
 
 ## Browser Support
 
