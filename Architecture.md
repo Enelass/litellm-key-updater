@@ -6,6 +6,13 @@ The LiteLLM Key Updater is built using a modular design where each script has a 
 
 ![System Architecture](assets/Architecture.svg)
 
+### Core Architecture Components
+
+- **Browser Token Extraction**: Uses `browser_cookie3` to extract JWT tokens from browser sessions (Chrome, Edge, Firefox, Brave - not Safari due to sandboxing)
+- **API Key Management**: Generates new API keys via LiteLLM Enterprise API using extracted bearer tokens
+- **Secure Storage**: Stores API keys in macOS Keychain and auto-configures shell environment variables
+- **Environment Analysis**: Scans for hardcoded secrets and generates security reports
+
 ## Data Flow
 
 ### Authentication Flow
@@ -97,3 +104,18 @@ The LiteLLM Key Updater is built using a modular design where each script has a 
 - Color-coded status messages
 - Progress indicators for long operations
 - Detailed error context and resolution steps
+
+## Browser Support Matrix
+
+- ✅ Chrome (`com.google.chrome`)
+- ✅ Edge (`com.microsoft.edgemac`)
+- ✅ Firefox (`org.mozilla.firefox`)
+- ✅ Brave (`com.brave.Browser`)
+- ❌ Safari (sandboxing restrictions)
+
+## Security Considerations
+
+- API keys are obfuscated in logs (first 4 + last 4 chars)
+- Keychain integration uses macOS `security` command
+- Environment scanning detects hardcoded secrets in shell configs
+- HTML reports generated for security analysis

@@ -111,6 +111,7 @@ After adding these lines, restart your terminal or run `source ~/.zshrc` (or `so
 ```bash
 # Check current API key status
 python3 check_key.py
+# OR use CLI command after installation: check-key
 ```
 
 ### 4. Automatic Renewal (Optional)
@@ -147,6 +148,73 @@ If step 3 is successful, you can enable automatic daily key checking:
 - **Python**: 3.8+
 - **Browser**: Active Open-WebUI session in supported browser
 
+## Development Commands
+
+### Setup Commands
+```bash
+# Clone and setup virtual environment
+git clone https://github.com/Enelass/litellm-key-updater.git
+cd litellm-key-updater
+uv venv && source .venv/bin/activate
+uv pip install -e .
+
+# Alternative: Install from source without virtual environment
+pip install -e .
+```
+
+### Key Operations
+```bash
+# Check current API key status and validate
+python3 check_key.py
+# OR use CLI command after installation: check-key
+
+# Force renewal of API key regardless of status
+python3 check_key.py --renew
+# OR: check-key --renew
+
+# Generate new API key (interactive mode)
+python3 renew_key.py
+# OR: renew-key
+
+# Extract bearer token from browser
+python3 get_bearer.py
+# OR: get-bearer
+
+# Analyze environment for hardcoded secrets
+python3 analyse_env.py
+
+# Update secrets in Secret Manager (alternative storage)
+python3 update_secretmgr.py
+```
+
+### Testing and Development
+```bash
+# Install daemon for automatic daily key checking
+./install.sh --daemon
+
+# Run environment analysis without opening browser
+python3 analyse_env.py --no-browser
+
+# Verify specific API key
+python3 analyse_env.py --verify-key sk-xxxxx
+```
+
+## Core Components
+
+### Scripts
+- `check_key.py`: Main script - validates current API key, auto-renews if expired, syncs keychain
+- `renew_key.py`: API key generation using browser bearer tokens
+- `get_bearer.py`: Browser session token extraction with fallback authentication
+- `analyse_env.py`: Environment scanning for security analysis
+- `update_secretmgr.py`: Alternative Secret Manager integration for cloud storage
+- `report.py`: HTML report generation for security analysis
+- `utils.py`: Shared utilities (browser detection, config loading, system info)
+- `logger.py`: Centralized logging system
+
+### Configuration Files
+- `config.json`: Server URLs, API endpoints, request headers, timeouts
+- `pyproject.toml`: Package definition with entry points for CLI commands
+
 ## Troubleshooting
 
 ### Common Issues
@@ -156,7 +224,7 @@ You haven't SSOed into your system yet or a token would have been found
 
 Ensure you're logged into LiteLLM in your browser
 
-**"API key validation failed"**  
+**"API key validation failed"**
 - Verify `config.json` URLs are correct
 - Check LiteLLM server accessibility
 - Ensure browser session hasn't expired
@@ -164,6 +232,12 @@ Ensure you're logged into LiteLLM in your browser
 **Permission errors**
 - Check file permissions: `chmod 600 config.json`
 - Grant keychain access if prompted
+
+### Testing Notes
+- Scripts expect macOS environment with supported browsers
+- Interactive authentication flow opens browser when no session found
+- Keychain operations require user permission on first run
+- Environment analysis scans common config files (`~/.zshrc`, `~/.bashrc`, etc.)
 
 
 ## Contributing
