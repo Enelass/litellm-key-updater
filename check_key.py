@@ -11,7 +11,9 @@ import json
 import os
 import requests
 from datetime import datetime
-from get_bearer import get_browser_cookies_for_domain
+from get_bearer import (
+    get_browser_cookies_for_domain,
+)
 from utils import Colors, colored_print, timestamp_print, load_config, get_browser_info, obfuscate_key
 from renew_key import request_api_key_with_token, copy_to_clipboard
 
@@ -27,7 +29,7 @@ def validate_api_key(api_key, final_token, cookies):
     
     # Prepare headers for validation request
     headers = {
-        'Host': config['oauth']['base_url'].replace('https://', '').replace('http://', '').split('/')[0],
+        'Host': config['oauth']['api_base_url'].replace('https://', '').replace('http://', '').split('/')[0],
         'Authorization': f'Bearer {api_key}',  # Use the API key for authorization
         'Content-Type': config['headers']['content_type'],
         'Accept': config['headers']['accept'],
@@ -211,6 +213,48 @@ def check_current_api_key(final_token, cookies, return_key=False):
             return False
         elif response.status_code == 401:
             print("❌ Authentication failed - token may be expired", file=sys.stderr)
+            print("🔄 Attempting automated renewal using cookie-session...", file=sys.stderr)
+
+            # Try renewal via renew_key using cookies only (no Bearer)
+            try:
+                # Build cookie-only headers by removing Authorization
+                cookie_headers = {
+                    'Host': config['oauth']['base_url'].replace('https://', '').replace('http://', '').split('/')[0],
+                    'Content-Type': config['headers']['content_type'],
+                    'Accept': config['headers']['accept'],
+                    'Accept-Language': config['headers']['accept_language'],
+                    'Accept-Encoding': config['headers']['accept_encoding'],
+                    'Connection': config['headers']['connection'],
+                    'User-Agent': config['headers']['user_agent'],
+                    'Origin': config['oauth']['base_url'].rstrip('/'),
+                    'Referer': config['oauth']['base_url']
+                }
+                # Attempt to request API key using cookie-session flow
+                success, new_key = request_api_key_with_token(final_token, cookies, silent=True, no_logging=True)
+                if success and new_key:
+                    print(f"✅ New API key generated: {obfuscate_key(new_key)}", file=sys.stderr)
+                    # Update macOS keychain with new API key
+                    try:
+                        import subprocess
+                        import os
+                        subprocess.run(['security', 'delete-generic-password', '-s', 'LITELLM_API_KEY'],
+                                     capture_output=True, check=False)
+                        result = subprocess.run(['security', 'add-generic-password', '-s', 'LITELLM_API_KEY',
+                                           '-a', os.getenv('USER', 'user'), '-w', new_key],
+                                          capture_output=True, text=True)
+                        if result.returncode == 0:
+                            print("🔐 Keychain updated with new API key", file=sys.stderr)
+                        else:
+                            print(f"⚠️  Failed to update keychain: {result.stderr.strip()}", file=sys.stderr)
+                    except Exception as keychain_error:
+                        print(f"⚠️  Keychain update error: {keychain_error}", file=sys.stderr)
+
+                    if return_key:
+                        return (True, new_key)
+                    return True
+            except Exception as e:
+                print(f"❌ Automated renewal failed: {e}", file=sys.stderr)
+
             if return_key:
                 return (False, None)
             return False

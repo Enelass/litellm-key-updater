@@ -10,7 +10,9 @@ import os
 import json
 import argparse
 import requests
-from get_bearer import get_browser_cookies_for_domain
+from get_bearer import (
+    get_browser_cookies_for_domain,
+)
 from utils import Colors, colored_print, load_config, get_browser_info
 
 def copy_to_clipboard(text):
@@ -92,6 +94,45 @@ def request_api_key_with_token(final_token, cookies, silent=False, no_logging=Fa
             except:
                 pass
         
+        # If unauthorized/forbidden, attempt cookie-session auth without Bearer
+        if response.status_code in [401, 403]:
+            try:
+                cookie_headers = dict(headers)
+                cookie_headers.pop('Authorization', None)
+                if not silent:
+                    print("🔄 Retrying with cookie-session auth (no Bearer)...", file=sys.stderr)
+                # Retry POST using cookies only
+                retry_post = requests.post(api_key_url, json={}, headers=cookie_headers, cookies=request_cookies, timeout=config['timeouts']['api_request'])
+                if retry_post.status_code in [200, 201]:
+                    try:
+                        data = retry_post.json()
+                        if data.get('api_key'):
+                            if not silent:
+                                colored_print("[SUCCESS] Success! Created API key (cookie-session)", Colors.GREEN)
+                                if not no_logging:
+                                    log_success("API key created successfully via cookie-session")
+                                print(f"API_KEY: {data['api_key']}")
+                            return (True, data['api_key'])
+                    except:
+                        pass
+                # Retry GET using cookies only
+                retry_get = requests.get(api_key_url, headers=cookie_headers, cookies=request_cookies, timeout=config['timeouts']['api_request'])
+                if retry_get.status_code == 200:
+                    try:
+                        data = retry_get.json()
+                        if data.get('api_key'):
+                            if not silent:
+                                colored_print("[SUCCESS] Retrieved existing API key (cookie-session)", Colors.GREEN)
+                                if not no_logging:
+                                    log_success("Retrieved existing API key via cookie-session")
+                                print(f"API_KEY: {data['api_key']}")
+                            return (True, data['api_key'])
+                    except:
+                        pass
+            except Exception as e:
+                if not silent:
+                    colored_print(f"[ERROR] Cookie-session retry failed: {e}", Colors.RED)
+
         if not silent:
             colored_print(f"[ERROR] API request failed: {response.status_code}", Colors.RED)
             log_error(f"API request failed: {response.status_code}")
