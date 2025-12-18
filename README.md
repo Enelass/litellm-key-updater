@@ -11,6 +11,8 @@ Security should not be at the expense of usability. Short-lived API keys provide
 
 I like to improve UX while maintaining security, which often isn't the case and results in productivity loss. This toolkit bridges that gap by automating the tedious manual renewal process while enhancing security through proper credential management.
 
+![alt text](Design-1.png)
+
 ```
 ┌─────────────────────────────────────────────────────────────────────────────────┐
 │                          WITHOUT THIS TOOL                                      │
