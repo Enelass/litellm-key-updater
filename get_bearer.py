@@ -333,13 +333,48 @@ def main():
     
     # Test API key generation with extracted cookies
     success = test_api_key_with_cookies(cookies, config)
-    
+
     if not success:
         colored_print("[ERROR] FAILED TO EXTRACT BEARER TOKEN FROM COOKIES", Colors.RED)
         log_error("Failed to extract bearer token from cookies")
         log_end()
         sys.exit(1)
-    
+
+    # Extract the token value to save to keychain
+    token_value = None
+    for name, cookie_data in cookies.items():
+        if name == 'token' and cookie_data['value']:
+            token_value = cookie_data['value']
+            break
+
+    if token_value:
+        # Save bearer token to macOS keychain as STUDIO_TOKEN
+        try:
+            print("", file=sys.stderr)
+            print("🔐 Saving bearer token to keychain as STUDIO_TOKEN...", file=sys.stderr)
+
+            # Delete existing keychain entry if it exists
+            subprocess.run(['security', 'delete-generic-password', '-s', 'STUDIO_TOKEN'],
+                         capture_output=True, check=False)
+
+            # Add new keychain entry
+            result = subprocess.run(['security', 'add-generic-password', '-s', 'STUDIO_TOKEN',
+                                   '-a', os.getenv('USER', 'user'), '-w', token_value],
+                                  capture_output=True, text=True)
+
+            if result.returncode == 0:
+                colored_print("[SUCCESS] Bearer token saved to keychain as STUDIO_TOKEN", Colors.GREEN)
+                log_success("Bearer token saved to keychain as STUDIO_TOKEN")
+                print("", file=sys.stderr)
+                colored_print("[INFO] Add this to your ~/.zshrc or ~/.bashrc:", Colors.CYAN)
+                print('export STUDIO_TOKEN=$(security find-generic-password -s "STUDIO_TOKEN" -w)')
+            else:
+                colored_print(f"[ERROR] Failed to save to keychain: {result.stderr.strip()}", Colors.RED)
+                log_error(f"Failed to save bearer token to keychain: {result.stderr.strip()}")
+        except Exception as keychain_error:
+            colored_print(f"[ERROR] Keychain error: {keychain_error}", Colors.RED)
+            log_error(f"Keychain error: {keychain_error}")
+
     log_end()
 
 if __name__ == "__main__":
