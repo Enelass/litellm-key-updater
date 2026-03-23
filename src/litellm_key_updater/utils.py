@@ -10,7 +10,9 @@ cookies, to request a bearer token for LiteLLM endpoint.
 Additional system information gathering for comprehensive logging.
 """
 
-from logger import log_success, log_warning, log_error, log_info, log_start, log_end
+from pathlib import Path
+
+from .logger import log_success, log_warning, log_error, log_info, log_start, log_end
 
 import os
 import sys
@@ -22,6 +24,16 @@ import platform
 import getpass
 import socket
 from datetime import timezone, timedelta
+
+PACKAGE_ROOT = Path(__file__).resolve().parent
+SRC_ROOT = PACKAGE_ROOT.parent
+REPO_ROOT = SRC_ROOT.parent
+CONFIG_DIR = "config"
+CONFIG_FILE_NAME = "config.json"
+CONFIG_TEMPLATE_NAME = "config.template.json"
+LOGS_DIR = "logs"
+LOG_FILE_NAME = "litellm-key-updater.log"
+SECURITY_REPORT_NAME = "security_report.html"
 
 # ============================================================================
 # COLOR UTILITIES
@@ -73,19 +85,79 @@ def obfuscate_key(key):
 # CONFIGURATION UTILITIES
 # ============================================================================
 
+def get_project_root() -> Path:
+    """Return the repository root for editable installs and local script usage."""
+    return REPO_ROOT
+
+
+def get_config_dir() -> Path:
+    """Return the configuration directory path."""
+    return get_project_root() / CONFIG_DIR
+
+
+def get_runtime_config_path() -> Path:
+    """Return the supported runtime config location."""
+    return get_config_dir() / CONFIG_FILE_NAME
+
+
+def get_config_template_path() -> Path:
+    """Return the config template location."""
+    return get_config_dir() / CONFIG_TEMPLATE_NAME
+
+
+def get_logs_dir() -> Path:
+    """Return the directory for generated logs and reports."""
+    return get_project_root() / LOGS_DIR
+
+
+def get_log_file_path() -> Path:
+    """Return the default application log path."""
+    return get_logs_dir() / LOG_FILE_NAME
+
+
+def get_security_report_path() -> Path:
+    """Return the default security report path."""
+    return get_logs_dir() / SECURITY_REPORT_NAME
+
+
+def build_subprocess_env() -> dict:
+    """Inject src into PYTHONPATH so package module subprocesses work from wrappers."""
+    env = os.environ.copy()
+    pythonpath_entries = [str(SRC_ROOT)]
+    existing = env.get("PYTHONPATH")
+    if existing:
+        pythonpath_entries.append(existing)
+    env["PYTHONPATH"] = os.pathsep.join(pythonpath_entries)
+    return env
+
+
 def load_config():
-    """Load configuration from config.json"""
+    """Load configuration from config/config.json."""
     try:
-        config_path = os.path.join(os.path.dirname(__file__), 'config.json')
-        with open(config_path, 'r') as f:
+        config_candidates = []
+        explicit_config = os.getenv("LITELLM_KEY_UPDATER_CONFIG")
+        if explicit_config:
+            config_candidates.append(Path(explicit_config).expanduser())
+        config_candidates.extend(
+            [
+                Path.cwd() / CONFIG_DIR / CONFIG_FILE_NAME,
+                get_runtime_config_path(),
+            ]
+        )
+
+        config_path = next((candidate for candidate in config_candidates if candidate.exists()), None)
+        if not config_path:
+            raise FileNotFoundError
+
+        with config_path.open('r') as f:
             return json.load(f)
     except FileNotFoundError:
-        colored_print("[ERROR] config.json not found", Colors.RED)
-        log_error("config.json not found")
+        colored_print("[ERROR] config/config.json not found", Colors.RED)
+        log_error("config/config.json not found")
         sys.exit(1)
     except json.JSONDecodeError:
-        colored_print("[ERROR] Invalid JSON in config.json", Colors.RED)
-        log_error("Invalid JSON in config.json")
+        colored_print("[ERROR] Invalid JSON in config/config.json", Colors.RED)
+        log_error("Invalid JSON in config/config.json")
         sys.exit(1)
 
 

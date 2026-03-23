@@ -59,7 +59,7 @@ NC='\033[0m' # No Color
 # Configuration
 INSTALL_DIR="$HOME/Applications/LiteLLM-key-updater"
 GITHUB_ZIP_URL="https://github.com/Enelass/litellm-key-updater/archive/refs/heads/main.zip"
-REQUIRED_PY_FILES=("get_bearer.py" "renew_key.py" "check_key.py" "utils.py")
+REQUIRED_FILES=("pyproject.toml" "src/litellm_key_updater/check_key.py" "src/litellm_key_updater/get_bearer.py" "src/litellm_key_updater/renew_key.py" "src/litellm_key_updater/utils.py")
 
 # Functions
 print_info() {
@@ -96,20 +96,20 @@ check_directory_exists() {
     fi
 }
 
-check_py_files_exist() {
+check_installation_files_exist() {
     local missing_files=()
     
-    for file in "${REQUIRED_PY_FILES[@]}"; do
+    for file in "${REQUIRED_FILES[@]}"; do
         if [[ ! -f "$INSTALL_DIR/$file" ]]; then
             missing_files+=("$file")
         fi
     done
     
     if [[ ${#missing_files[@]} -eq 0 ]]; then
-        print_success "All required Python files found"
+        print_success "All required installation files found"
         return 0
     else
-        print_warning "Missing Python files: ${missing_files[*]}"
+        print_warning "Missing installation files: ${missing_files[*]}"
         return 1
     fi
 }
@@ -195,11 +195,11 @@ setup_virtual_environment() {
         return 1
     fi
     
-    print_info "Installing dependencies..."
-    if uv pip install browser_cookie3 requests; then
-        print_success "Dependencies installed"
+    print_info "Installing package and dependencies..."
+    if uv pip install -e .; then
+        print_success "Package and dependencies installed"
     else
-        print_error "Failed to install dependencies"
+        print_error "Failed to install package dependencies"
         return 1
     fi
     
@@ -214,7 +214,7 @@ main() {
     print_info "======================================="
     
     # Check if directory exists and has required files
-    if check_directory_exists && check_py_files_exist; then
+    if check_directory_exists && check_installation_files_exist; then
         print_success "Installation already exists and appears complete"
         print_info "Location: $INSTALL_DIR"
         
@@ -250,8 +250,8 @@ main() {
     fi
     
     # Verify files after extraction
-    if ! check_py_files_exist; then
-        print_error "Installation incomplete - some Python files are still missing"
+    if ! check_installation_files_exist; then
+        print_error "Installation incomplete - some required files are still missing"
         exit 1
     fi
     
@@ -275,11 +275,11 @@ create_daemon_plist() {
     local schedule_hour=9
     local schedule_minute=30
     
-    if [[ -f "$INSTALL_DIR/config.json" ]]; then
-        # Extract schedule from config.json if it exists
+    if [[ -f "$INSTALL_DIR/config/config.json" ]]; then
+        # Extract schedule from config/config.json if it exists
         if command -v python3 >/dev/null 2>&1; then
-            schedule_hour=$(python3 -c "import json; print(json.load(open('$INSTALL_DIR/config.json')).get('daemon', {}).get('schedule_hour', 9))" 2>/dev/null || echo "9")
-            schedule_minute=$(python3 -c "import json; print(json.load(open('$INSTALL_DIR/config.json')).get('daemon', {}).get('schedule_minute', 30))" 2>/dev/null || echo "30")
+            schedule_hour=$(python3 -c "import json; print(json.load(open('$INSTALL_DIR/config/config.json')).get('daemon', {}).get('schedule_hour', 9))" 2>/dev/null || echo "9")
+            schedule_minute=$(python3 -c "import json; print(json.load(open('$INSTALL_DIR/config/config.json')).get('daemon', {}).get('schedule_minute', 30))" 2>/dev/null || echo "30")
         fi
     fi
     
@@ -294,8 +294,7 @@ create_daemon_plist() {
     <string>com.litellm.keyupdater</string>
     <key>ProgramArguments</key>
     <array>
-        <string>$INSTALL_DIR/.venv/bin/python</string>
-        <string>$INSTALL_DIR/check_key.py</string>
+        <string>$INSTALL_DIR/.venv/bin/check-key</string>
     </array>
     <key>WorkingDirectory</key>
     <string>$INSTALL_DIR</string>

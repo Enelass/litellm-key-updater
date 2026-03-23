@@ -5,14 +5,14 @@ Updates macOS Keychain ONLY with current valid API key
 Only operates when no GenAI hardcoded secrets are detected by security scanner
 """
 
-from logger import log_success, log_warning, log_error, log_info, log_start, log_end
 import os
 import sys
 import subprocess
 import argparse
 from pathlib import Path
 from datetime import datetime
-from utils import Colors, colored_print, obfuscate_key
+from .logger import log_success, log_warning, log_error, log_info, log_start, log_end
+from .utils import Colors, colored_print, get_security_report_path, obfuscate_key
 
 
 def log_message(message, prefix="[INFO]", no_logging=False):
@@ -76,14 +76,14 @@ def get_current_api_key():
     """Get current valid API key"""
     try:
         # Import and use get_bearer to authenticate 
-        from get_bearer import get_bearer_token_and_cookies
+        from .get_bearer import get_bearer_token_and_cookies
         result = get_bearer_token_and_cookies()
         
         if not result['success']:
             log_message("Failed to get bearer token", "❌")
             return None
         
-        from check_key import check_current_key_status
+        from .check_key import check_current_key_status
         is_valid, current_key = check_current_key_status(result['token'], result['cookies'], return_key=True)
         
         if is_valid and current_key:
@@ -160,7 +160,7 @@ def main():
             log_message("🔒 For security reasons, key update is BLOCKED until hardcoded keys are removed.", "❌", no_logging)
 
             if scanner:
-                report_path = scanner.save_report('security_report.html')
+                report_path = scanner.save_report(get_security_report_path())
                 log_message(f"📊 Detailed security report: {report_path}", "📄", no_logging)
 
             if not args.no_logging:

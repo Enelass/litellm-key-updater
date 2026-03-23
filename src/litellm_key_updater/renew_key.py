@@ -4,16 +4,17 @@ Request API key using extracted bearer token and cookies
 Separated from get_bearer.py to keep token extraction and API requests separate
 """
 
-from logger import log_success, log_warning, log_error, log_info, log_start, log_end
 import sys
 import os
 import json
 import argparse
+
 import requests
-from get_bearer import (
+from .get_bearer import (
     get_browser_cookies_for_domain,
 )
-from utils import Colors, colored_print, load_config, get_browser_info
+from .logger import log_success, log_warning, log_error, log_info, log_start, log_end
+from .utils import Colors, colored_print, load_config, get_browser_info, obfuscate_key
 
 def copy_to_clipboard(text):
     """Copy text to clipboard using macOS pbcopy"""
@@ -71,7 +72,7 @@ def request_api_key_with_token(final_token, cookies, silent=False, no_logging=Fa
                         colored_print("[SUCCESS] Success! Created API key", Colors.GREEN)
                         if not no_logging:
                             log_success("API key created successfully")
-                        print(f"API_KEY: {data['api_key']}")
+                        print(f"API_KEY: {obfuscate_key(data['api_key'])}")
                     return (True, data['api_key'])
             except:
                 pass
@@ -89,7 +90,7 @@ def request_api_key_with_token(final_token, cookies, silent=False, no_logging=Fa
                         colored_print("[SUCCESS] Retrieved existing API key", Colors.GREEN)
                         if not no_logging:
                             log_success("Retrieved existing API key")
-                        print(f"API_KEY: {data['api_key']}")
+                        print(f"API_KEY: {obfuscate_key(data['api_key'])}")
                     return (True, data['api_key'])
             except:
                 pass
@@ -111,7 +112,7 @@ def request_api_key_with_token(final_token, cookies, silent=False, no_logging=Fa
                                 colored_print("[SUCCESS] Success! Created API key (cookie-session)", Colors.GREEN)
                                 if not no_logging:
                                     log_success("API key created successfully via cookie-session")
-                                print(f"API_KEY: {data['api_key']}")
+                                print(f"API_KEY: {obfuscate_key(data['api_key'])}")
                             return (True, data['api_key'])
                     except:
                         pass
@@ -125,7 +126,7 @@ def request_api_key_with_token(final_token, cookies, silent=False, no_logging=Fa
                                 colored_print("[SUCCESS] Retrieved existing API key (cookie-session)", Colors.GREEN)
                                 if not no_logging:
                                     log_success("Retrieved existing API key via cookie-session")
-                                print(f"API_KEY: {data['api_key']}")
+                                print(f"API_KEY: {obfuscate_key(data['api_key'])}")
                             return (True, data['api_key'])
                     except:
                         pass
@@ -153,8 +154,8 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  python3 renew_key.py                 # Interactive mode - prompts before generating key
-  python3 renew_key.py --silent        # Silent mode - generates key without prompting
+  renew-key                            # Interactive mode - prompts before generating key
+  renew-key --silent                   # Silent mode - generates key without prompting
         """
     )
     parser.add_argument(

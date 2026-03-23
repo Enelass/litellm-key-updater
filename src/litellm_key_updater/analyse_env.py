@@ -8,7 +8,6 @@ This script:
 2. Finds where API keys are declared (env vars, config files, etc.)
 """
 
-from logger import log_success, log_warning, log_error, log_info, log_start, log_end
 import os
 import re
 import json
@@ -18,7 +17,8 @@ import sqlite3
 import argparse
 from pathlib import Path
 from datetime import datetime
-from utils import Colors, colored_print
+from .logger import log_success, log_warning, log_error, log_info, log_start, log_end
+from .utils import Colors, colored_print, get_security_report_path
 
 def refresh_environment():
     """Refresh environment variables by sourcing shell config files"""
@@ -310,7 +310,7 @@ def search_config_files(log_file=None):
         ('.env.local', 'Local environment'),
         ('.env.development', 'Development environment'),
         ('.env.production', 'Production environment'),
-        ('config.json', 'Generic config'),
+        ('config/config.json', 'Generic config'),
         ('package.json', 'Node.js package config'),
     ]
     
@@ -670,10 +670,10 @@ def main():
         
         # Step 4: Run comprehensive security scan
         try:
-            from report import SecurityScanner
+            from .report import SecurityScanner
             scanner = SecurityScanner()
             scanner.scan_common_locations()
-            report_path = scanner.save_report('security_report.html')
+            report_path = scanner.save_report(get_security_report_path())
             log_message(f"[SECURITY] Security report saved to: {report_path}", log_file)
             
             # Determine recommendation based on scan results
@@ -689,7 +689,7 @@ def main():
                 log_message("[SUCCESS] Recommendation: Nil", log_file)
                 log_success("Security scan completed - no issues found")
         except Exception as e:
-            log_message(f"[SECURITY] Security report saved to: security_report.html", log_file)
+            log_message(f"[SECURITY] Security report saved to: {get_security_report_path()}", log_file)
             log_message("[WARNING] Recommendation: Review security configuration", log_file)
         
         log_message("[SUMMARY] Analysis Complete!", log_file)

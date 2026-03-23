@@ -4,20 +4,29 @@ Check current API key using extracted bearer token and cookies
 Similar to renew_key.py but only retrieves existing API key without generating new ones
 """
 
-from logger import log_success, log_warning, log_error, log_info, log_start, log_end
 import sys
 import argparse
 import json
 import os
-import requests
+import subprocess
+from contextlib import redirect_stderr
 from datetime import datetime
-from get_bearer import (
+
+import requests
+from .get_bearer import (
     get_browser_cookies_for_domain,
 )
-from utils import Colors, colored_print, timestamp_print, load_config, get_browser_info, obfuscate_key
-from renew_key import request_api_key_with_token, copy_to_clipboard
-
-
+from .logger import log_success, log_warning, log_error, log_info, log_start, log_end
+from .renew_key import request_api_key_with_token, copy_to_clipboard
+from .utils import (
+    Colors,
+    build_subprocess_env,
+    colored_print,
+    get_browser_info,
+    load_config,
+    obfuscate_key,
+    timestamp_print,
+)
 
 def validate_api_key(api_key, final_token, cookies):
     """Validate if an API key is still active by testing it against the models endpoint"""
@@ -67,8 +76,6 @@ def validate_api_key(api_key, final_token, cookies):
                     
                     # Update macOS keychain with new API key
                     try:
-                        import subprocess
-                        import os
                         # Delete existing keychain entry
                         subprocess.run(['security', 'delete-generic-password', '-s', 'LITELLM_API_KEY'],
                                      capture_output=True, check=False)
@@ -235,8 +242,6 @@ def check_current_api_key(final_token, cookies, return_key=False):
                     print(f"✅ New API key generated: {obfuscate_key(new_key)}", file=sys.stderr)
                     # Update macOS keychain with new API key
                     try:
-                        import subprocess
-                        import os
                         subprocess.run(['security', 'delete-generic-password', '-s', 'LITELLM_API_KEY'],
                                      capture_output=True, check=False)
                         result = subprocess.run(['security', 'add-generic-password', '-s', 'LITELLM_API_KEY',
@@ -284,8 +289,8 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  python3 check_key.py               # Check current API key and validate if it's still active
-  python3 check_key.py --renew       # Force renewal of API key regardless of current status
+  check-key                          # Check current API key and validate if it's still active
+  check-key --renew                  # Force renewal of API key regardless of current status
         """
     )
     
@@ -320,9 +325,6 @@ Examples:
     colored_print(f"[INFO] Attempting to extract cookies for domain: {domain}", Colors.CYAN)
     
     # Temporarily redirect get_browser_cookies_for_domain verbose output
-    import os
-    from contextlib import redirect_stderr
-    
     # Capture the verbose output and only show what we want
     with open(os.devnull, 'w') as devnull:
         with redirect_stderr(devnull):
@@ -359,7 +361,6 @@ Examples:
         log_info("Forced API key renewal requested")
         
         try:
-            from renew_key import request_api_key_with_token
             success, new_api_key = request_api_key_with_token(token_value, cookies, silent=False, no_logging=True)
             
             if success and new_api_key:
@@ -368,8 +369,6 @@ Examples:
                 
                 # Update macOS keychain with new API key
                 try:
-                    import subprocess
-                    import os
                     # Delete existing keychain entry
                     subprocess.run(['security', 'delete-generic-password', '-s', 'LITELLM_API_KEY'],
                                  capture_output=True, check=False)
@@ -414,8 +413,6 @@ Examples:
         if success and current_api_key:
             # Update keychain if current key differs from keychain key
             try:
-                import subprocess
-                import os
                 # Check current keychain key
                 keychain_result = subprocess.run(['security', 'find-generic-password', '-s', 'LITELLM_API_KEY', '-w'],
                                                capture_output=True, text=True, check=False)
@@ -449,10 +446,10 @@ Examples:
             
             # Call analyse_env.py with the current active key
             try:
-                import subprocess
                 result = subprocess.run([
-                    sys.executable, 'analyse_env.py', '--verify-key', current_api_key, '--no-logging'
-                ], capture_output=True, text=True, timeout=30)
+                    sys.executable, '-m', 'litellm_key_updater.analyse_env',
+                    '--verify-key', current_api_key, '--no-logging'
+                ], capture_output=True, text=True, timeout=30, env=build_subprocess_env())
                 
                 # Log analyse_env completion (it uses --no-logging to avoid duplicate START/END)
                 if result.returncode == 0:
@@ -469,9 +466,11 @@ Examples:
                 if key_update_detected:
                     print("Attempting to synchronize environment with active key...", file=sys.stderr)
                     try:
-                        # Pass the current active key to update_secret_manager.py
-                        sync_result = subprocess.run([sys.executable, './update_secretmgr.py', '--key', current_api_key, '--no-logging'],
-                                                   capture_output=True, text=True, cwd='.')
+                        # Pass the current active key to update_secretmgr.py
+                        sync_result = subprocess.run([
+                            sys.executable, '-m', 'litellm_key_updater.update_secretmgr',
+                            '--key', current_api_key, '--no-logging'
+                        ], capture_output=True, text=True, cwd='.', env=build_subprocess_env())
                         if sync_result.returncode == 0:
                             print("Environment synchronization completed successfully", file=sys.stderr)
                             print("Please run 'source ~/.zshrc' to reload environment variables", file=sys.stderr)
@@ -479,8 +478,10 @@ Examples:
                             # Regenerate HTML report after successful synchronization
                             print("Updating security report...", file=sys.stderr)
                             try:
-                                report_result = subprocess.run([sys.executable, 'analyse_env.py', '--no-browser', '--no-logging'],
-                                                            capture_output=True, text=True, timeout=30)
+                                report_result = subprocess.run([
+                                    sys.executable, '-m', 'litellm_key_updater.analyse_env',
+                                    '--no-browser', '--no-logging'
+                                ], capture_output=True, text=True, timeout=30, env=build_subprocess_env())
                                 if report_result.returncode == 0:
                                     print("Security report updated successfully", file=sys.stderr)
                                 else:
@@ -492,7 +493,7 @@ Examples:
                         else:
                             print(f"❌ Environment synchronization failed: {sync_result.stderr.strip()}", file=sys.stderr)
                     except Exception as e:
-                        print(f"❌ Failed to call update_secret_manager.py: {str(e)}", file=sys.stderr)
+                        print(f"❌ Failed to call update_secretmgr.py: {str(e)}", file=sys.stderr)
                 
                 if result.returncode != 0:
                     print("⚠️  Environment analysis completed with warnings", file=sys.stderr)
@@ -510,3 +511,6 @@ Examples:
 
 if __name__ == "__main__":
     main()
+
+
+check_current_key_status = check_current_api_key

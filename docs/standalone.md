@@ -4,7 +4,7 @@ This document describes each Python script in the LiteLLM Key Updater toolkit an
 
 ## Core Scripts
 
-### `check_key.py` - API Key Validation
+### `check-key` - API Key Validation
 **Purpose**: Validates your current API key and checks environment synchronization
 
 **Features**:
@@ -16,15 +16,15 @@ This document describes each Python script in the LiteLLM Key Updater toolkit an
 
 **Usage**:
 ```bash
-python3 check_key.py
+check-key
 ```
 
 **Example Output**:
-![Check Key Screenshot](assets/check_key.png)
+![Check Key Screenshot](../assets/check_key.png)
 
 ---
 
-### `get_bearer.py` - Browser Token Extraction
+### `get-bearer` - Browser Token Extraction
 **Purpose**: Extracts and validates browser authentication tokens
 
 **Features**:
@@ -35,15 +35,15 @@ python3 check_key.py
 
 **Usage**:
 ```bash
-python3 get_bearer.py
+get-bearer
 ```
 
 **Example Output**:
-![Bearer Token Screenshot](assets/get_bearer.png)
+![Bearer Token Screenshot](../assets/get_bearer.png)
 
 ---
 
-### `renew_key.py` - API Key Generation
+### `renew-key` - API Key Generation
 **Purpose**: Generates fresh API keys using browser session
 
 **Features**:
@@ -54,15 +54,15 @@ python3 get_bearer.py
 
 **Usage**:
 ```bash
-python3 renew_key.py
+renew-key
 ```
 
 **Example Output**:
-![Renew Key Screenshot](assets/renew_key.png)
+![Renew Key Screenshot](../assets/renew_key.png)
 
 ---
 
-### `analyse_env.py` - Environment Analysis
+### `analyse-env` - Environment Analysis
 **Purpose**: Comprehensive environment analysis and discovery
 
 **Features**:
@@ -74,15 +74,15 @@ python3 renew_key.py
 
 **Usage**:
 ```bash
-python3 analyse_env.py
+analyse-env
 ```
 
 **Example Output**:
-![Environment Analysis Screenshot](assets/Analysis%20Report.png)
+![Environment Analysis Screenshot](../assets/Analysis%20Report.png)
 
 ---
 
-### `report.py` - Security Analysis
+### `generate-report` - Security Analysis
 **Purpose**: Generates comprehensive security reports
 
 **Features**:
@@ -94,15 +94,15 @@ python3 analyse_env.py
 
 **Usage**:
 ```bash
-python3 report.py
+generate-report
 ```
 
 **Example Output**:
-![Security Report Screenshot](assets/Analysis%20Report.png)
+![Security Report Screenshot](../assets/Analysis%20Report.png)
 
 ---
 
-### `update_secret_manager.py` - Credential Synchronization
+### `update-secretmgr` - Credential Synchronization
 **Purpose**: Updates macOS Keychain with validated API keys
 
 **Features**:
@@ -113,17 +113,17 @@ python3 report.py
 
 **Usage**:
 ```bash
-python3 update_secret_manager.py
+update-secretmgr
 ```
 
 **Example Output**:
-![Secret Manager Screenshot](assets/update_secret_manager.png)
+![Secret Manager Screenshot](../assets/update_secret_manager.png)
 
 ---
 
 ## Utility Scripts
 
-### `utils.py` - Shared Utilities
+### `litellm_key_updater.utils` - Shared Utilities
 **Purpose**: Provides common functionality across all scripts
 
 **Features**:
@@ -136,7 +136,7 @@ python3 update_secret_manager.py
 **Usage**: Imported by other scripts, not run directly
 
 **Example Output**:
-![Utils Screenshot](assets/utils.png)
+![Utils Screenshot](../assets/utils.png)
 
 ---
 
@@ -162,10 +162,10 @@ python3 update_secret_manager.py
 
 ## Configuration Files
 
-### `config.json` - Main Configuration
+### `config/config.json` - Main Configuration
 Contains all endpoint URLs, headers, and timeout settings for your LiteLLM instance.
 
-### `config.template.json` - Configuration Template
+### `config/config.template.json` - Configuration Template
 Template file with placeholder values for initial setup.
 
 ---
@@ -175,37 +175,37 @@ Template file with placeholder values for initial setup.
 ### Basic Validation Workflow
 ```bash
 # 1. Check current key status
-python3 check_key.py
+check-key
 
 # 2. Generate new key if needed
-python3 renew_key.py
+renew-key
 
 # 3. Validate environment sync
-python3 analyse_env.py
+analyse-env
 ```
 
 ### Security Audit Workflow
 ```bash
 # 1. Run security scan
-python3 report.py
+generate-report
 
 # 2. Fix any hardcoded secrets
 # (manual step)
 
 # 3. Update keychain safely
-python3 update_secret_manager.py
+update-secretmgr
 ```
 
 ### Troubleshooting Workflow
 ```bash
 # 1. Extract browser token manually
-python3 get_bearer.py
+get-bearer
 
 # 2. Validate token works
-python3 check_key.py
+check-key
 
 # 3. Generate fresh key if needed
-python3 renew_key.py
+renew-key
 ```
 
 ---
@@ -214,16 +214,16 @@ python3 renew_key.py
 
 ```mermaid
 graph LR
-    A[check_key.py] --> B[get_bearer.py]
-    A --> C[renew_key.py]
-    A --> D[analyse_env.py]
-    A --> E[utils.py]
+    A[check-key] --> B[get-bearer]
+    A --> C[renew-key]
+    A --> D[analyse-env]
+    A --> E[litellm_key_updater.utils]
     
-    F[report.py] --> E
-    G[update_secret_manager.py] --> A
+    F[generate-report] --> E
+    G[update-secretmgr] --> A
     G --> F
     
     H[install.sh] --> I[All Scripts]
 ```
 
-All scripts depend on `utils.py` for shared functionality and `config.json` for configuration settings.
+All commands depend on `litellm_key_updater.utils` for shared functionality and `config/config.json` for configuration settings.

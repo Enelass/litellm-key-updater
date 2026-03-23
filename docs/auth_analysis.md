@@ -23,7 +23,7 @@ graph TB
     C --> C3[Firefox Browser]
     C --> C4[Brave Browser]
     
-    D --> D1[config.json]
+    D --> D1[config/config.json]
     
     E --> E1[Bearer Token Auth]
     E --> E2[Cookie Authentication]
@@ -111,14 +111,14 @@ def get_browser_cookies_for_domain(browser_id, domain):
 headers = {
     'Authorization': f'Bearer {final_token}',
     'Content-Type': 'application/json',
-    # ... other headers from config.json
+    # ... other headers from config/config.json
 }
 ```
 
 ### Layer 3: API Key Authorization  
 - **Purpose**: Validate API key permissions and functionality
 - **Method**: Test against models endpoint with the retrieved API key
-- **Endpoint**: [`/api/v1/models`](config.json:10)
+- **Endpoint**: [`/api/v1/models`](config/config.json:10)
 
 ```python
 # API key validation (check_key.py:47-48)
@@ -130,7 +130,7 @@ response = requests.get(models_url, headers=headers,
 ## Configuration Management
 
 ### Centralized Configuration
-All authentication parameters are managed through [`config.json`](config.json:1):
+All authentication parameters are managed through [`config/config.json`](config/config.json:1):
 
 ```json
 {
@@ -246,12 +246,12 @@ flowchart LR
 
 | Endpoint | Purpose | Authentication | HTTP Method |
 |----------|---------|----------------|-------------|
-| [`/api/v1/auths/api_key`](config.json:7) | Retrieve current API key | Bearer Token + Cookies | GET |
-| [`/api/v1/models`](config.json:10) | Validate API key permissions | API Key | GET |
+| [`/api/v1/auths/api_key`](config/config.json:7) | Retrieve current API key | Bearer Token + Cookies | GET |
+| [`/api/v1/models`](config/config.json:10) | Validate API key permissions | API Key | GET |
 
 ## Header Configuration
 
-The system uses standardized headers from [`config.json`](config.json:16-22) to mimic browser behavior:
+The system uses standardized headers from [`config/config.json`](config/config.json:16-22) to mimic browser behavior:
 
 ```python
 headers = {

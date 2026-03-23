@@ -9,7 +9,8 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
-LOG_FILE = "litellm-key-updater.log"
+PACKAGE_ROOT = Path(__file__).resolve().parent
+LOG_FILE = PACKAGE_ROOT.parent.parent / "logs" / "litellm-key-updater.log"
 
 class LiteLLMLogger:
     def __init__(self, script_name=None):
@@ -28,7 +29,8 @@ class LiteLLMLogger:
         log_entry = f"{timestamp} - {self.script_name} - [{level}] {message}\n"
         
         try:
-            with open(self.log_file_path, 'a', encoding='utf-8') as f:
+            self.log_file_path.parent.mkdir(parents=True, exist_ok=True)
+            with self.log_file_path.open('a', encoding='utf-8') as f:
                 f.write(log_entry)
         except Exception as e:
             # Fallback to console if file write fails
@@ -56,7 +58,8 @@ class LiteLLMLogger:
         # Add separator before START
         separator = "=" * 50 + "\n"
         try:
-            with open(self.log_file_path, 'a', encoding='utf-8') as f:
+            self.log_file_path.parent.mkdir(parents=True, exist_ok=True)
+            with self.log_file_path.open('a', encoding='utf-8') as f:
                 f.write(separator)
         except Exception as e:
             print(f"[LOGGER ERROR] Could not write separator to {self.log_file_path}: {e}")

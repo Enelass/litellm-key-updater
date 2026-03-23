@@ -5,15 +5,17 @@ Uses browser-cookie3 library to handle encrypted cookies automatically
 Includes interactive authentication flow when no cookies are found
 """
 
-from logger import log_success, log_warning, log_error, log_info, log_start, log_end
 import sys
 import os
 import json
+import argparse
+
 import requests
 import browser_cookie3
 import subprocess
 import time
-from utils import Colors, colored_print, load_config, get_browser_info
+from .logger import log_success, log_warning, log_error, log_info, log_start, log_end
+from .utils import Colors, colored_print, load_config, get_browser_info
 
 def get_browser_cookies_for_domain(browser_id, domain):
     """Extract cookies from the default browser using browser-cookie3 with fallbacks"""
@@ -282,6 +284,16 @@ def get_bearer_token():
 def main():
     """Main function"""
     log_start()
+    parser = argparse.ArgumentParser(
+        description="Extract JWT token from the default browser session data",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  get-bearer                         # Extract and validate the browser bearer token
+        """
+    )
+    parser.parse_args()
+
     colored_print(" Extracting JWT token from default browser session data...", Colors.CYAN)
     
     # Load configuration
@@ -379,3 +391,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+get_bearer_token_and_cookies = get_bearer_token

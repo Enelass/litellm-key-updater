@@ -1,18 +1,17 @@
 
 # Security reports and recommendations
 security_recommendations.html
-security_report.html
 
-# Log files
-*.log
-environment_analysis.log
+# Generated output
+logs/*
+!logs/.gitkeep
 
 # Temporary files
 *.tmp
 *.temp
 
 # Configuration files containing sensitive information
-config.json
+config/config.json
 
 
 # Background stdout stderr
@@ -24,11 +23,11 @@ nohup.out
 .claude/
 .gemini/
 .codex/
-CLAUDE.md		# Claude Code init
-GEMINI.md		# Gemin CLI init
-AGENTS.md		# Codex init
-
-
+.opencode/
+CLAUDE.md
+GEMINI.md
+AGENTS.md
+ToDo NextAction.txt
 
 # macOS specific files
 .DS_Store
@@ -64,8 +63,14 @@ share/python-wheels/
 MANIFEST
 
 # Virtual environments
+.venv/
+.venv-smoke/
+.venv-smoke312/
 venv/
 venv.bak/
+
+# Test/cache artifacts
+.pytest_cache/
 
 # IDE specific files
 .vscode/settings.json

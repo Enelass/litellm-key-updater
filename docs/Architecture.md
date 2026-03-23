@@ -4,7 +4,7 @@
 
 The LiteLLM Key Updater is built using a modular design where each script has a specific job, making the system easier to maintain and understand:
 
-![System Architecture](assets/Architecture.svg)
+![System Architecture](../assets/Diagram.png)
 
 ### Core Architecture Components
 
@@ -17,41 +17,41 @@ The LiteLLM Key Updater is built using a modular design where each script has a 
 
 ### Authentication Flow
 
-1. **User or cron** executes `check_key.py`
-2. **check_key.py** calls `get_bearer.py` to extract browser token
-3. **get_bearer.py** returns bearer token + cookies
-4. **check_key.py** requests current API key from LiteLLM API
+1. **User or cron** executes `check-key`
+2. **check-key** calls `get-bearer` to extract browser token
+3. **get-bearer** returns bearer token + cookies
+4. **check-key** requests current API key from LiteLLM API
 5. **LiteLLM API** returns API key response
-6. **check_key.py** validates key permissions against API
+6. **check-key** validates key permissions against API
 7. **LiteLLM API** returns validation result
 
 **If Key Valid:**
-- **check_key.py** calls `analyse_env.py` to cross-reference environment
-- **analyse_env.py** returns environment analysis
-- **check_key.py** returns success + analysis to user
+- **check-key** calls `analyse-env` to cross-reference environment
+- **analyse-env** returns environment analysis
+- **check-key** returns success + analysis to user
 
 **If Key Expired:**
-- **check_key.py** calls `renew_key.py` for auto-renewal
-- **renew_key.py** generates new key via LiteLLM API
+- **check-key** calls `renew-key` for auto-renewal
+- **renew-key** generates new key via LiteLLM API
 - **LiteLLM API** returns new API key
-- **renew_key.py** returns renewal success
-- **check_key.py** returns key renewed status to user
+- **renew-key** returns renewal success
+- **check-key** returns key renewed status to user
 
 ## Module Responsibilities
 
 ### Authentication Layer
-- **get_bearer.py**: Browser session token extraction
-- **renew_key.py**: API key generation and renewal
-- **check_key.py**: Key validation and orchestration
+- **get-bearer**: Browser session token extraction
+- **renew-key**: API key generation and renewal
+- **check-key**: Key validation and orchestration
 
 ### Analysis Layer
-- **analyse_env.py**: Environment scanning and discovery
-- **report.py**: Security analysis and reporting
-- **update_secret_manager.py**: Credential synchronization
+- **analyse-env**: Environment scanning and discovery
+- **generate-report**: Security analysis and reporting
+- **update-secretmgr**: Credential synchronization
 
 ### Utility Layer  
-- **utils.py**: Shared utilities and configuration management
-- **config.json**: Centralized configuration
+- **litellm_key_updater.utils**: Shared utilities and configuration management
+- **config/config.json**: Centralized configuration
 - **install.sh**: Automated setup and deployment
 
 ## Security Design

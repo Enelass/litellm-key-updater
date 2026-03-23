@@ -4,18 +4,19 @@ Security Recommendations Generator
 Variable name-based secrets detection with regex validation
 """
 
-from logger import log_success, log_warning, log_error, log_info, log_start, log_end
 import os
 import re
 import json
 import subprocess
 import getpass
+import argparse
 from pathlib import Path
 from datetime import datetime
 import webbrowser
 import tempfile
 import sys
-from utils import Colors, colored_print
+from .logger import log_success, log_warning, log_error, log_info, log_start, log_end
+from .utils import Colors, colored_print, get_security_report_path
 
 def sanitize_path(path_str):
     """Replace full user paths with ~/ for privacy"""
@@ -339,7 +340,7 @@ class SecurityScanner:
         
         # Project configuration files
         project_configs = [
-            'config.json',
+            'config/config.json',
             'package.json',
             'settings.json',
             '.npmrc',
@@ -988,6 +989,16 @@ def generate_secure_storage_html():
 def main():
     """Main function to run the security scanner"""
     log_start()
+    parser = argparse.ArgumentParser(
+        description="Generate the LiteLLM security report",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  generate-report                    # Scan common locations and write logs/security_report.html
+        """
+    )
+    parser.parse_args()
+
     scanner = SecurityScanner()
     scanner.scan_common_locations()
     
@@ -995,7 +1006,7 @@ def main():
     system_status = analyze_system_status(scanner.secrets_found)
     
     if scanner.secrets_found:
-        report_file = Path('security_report.html')
+        report_file = get_security_report_path()
         scanner.save_report(report_file)
         
         colored_print(f"[SECURITY] Report saved to: {report_file}", Colors.PURPLE)
