@@ -68,6 +68,7 @@ MANIFEST
 .venv-smoke312/
 venv/
 venv.bak/
+uv.lock
 
 # Test/cache artifacts
 .pytest_cache/

@@ -38,6 +38,3 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/litellm_key_updater"]
-
-[tool.uv]
-dev-dependencies = []
